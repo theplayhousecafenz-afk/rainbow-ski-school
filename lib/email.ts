@@ -274,6 +274,23 @@ export async function sendEnquiryToAdmin(enquiry: Enquiry): Promise<void> {
   await send(ADMIN_EMAIL, subject, html)
 }
 
+// Admin alert — confirmed lesson tomorrow has no instructor assigned
+export async function sendAdminNoInstructorAlert(lessons: Lesson[]): Promise<void> {
+  const rows = lessons
+    .map((l) => {
+      const disc = l.discipline.toUpperCase()
+      return `<tr><td>${disc}</td><td>${formatNZDate(l.date)}</td><td>${formatTime(l.start_time)}</td><td>${l.lesson_type}</td><td>${l.current_bookings}/${l.max_students}</td></tr>`
+    })
+    .join('')
+  const html = baseTemplate(
+    'Action Required — No Instructor Assigned',
+    `<p>The following lessons are running <strong>tomorrow</strong> but have no instructor assigned. Please log in and assign one urgently.</p>
+    <table><tr><th>Discipline</th><th>Date</th><th>Time</th><th>Type</th><th>Bookings</th></tr>${rows}</table>
+    <a class="btn" href="${BASE_URL}/admin/lessons">Open Admin</a>`
+  )
+  await send(ADMIN_EMAIL, 'ACTION REQUIRED: Lesson(s) tomorrow with no instructor', html)
+}
+
 // Admin notification — lesson cancelled (0 bookings at cutoff)
 export async function sendAdminLessonCancelledNoBookings(lesson: Lesson): Promise<void> {
   const disc = lesson.discipline.toUpperCase()

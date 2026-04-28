@@ -30,6 +30,14 @@ const EMPTY_FORM: CreateForm = {
   level: 'beginner',
 }
 
+function needsInstructor(lesson: Lesson): boolean {
+  if (lesson.instructor_id) return false
+  if (!['confirmed', 'instructor_confirmed'].includes(lesson.status)) return false
+  const lessonDate = new Date(lesson.date + 'T00:00:00Z')
+  const twoDaysFromNow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+  return lessonDate <= twoDaysFromNow
+}
+
 export default function AdminLessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [filter, setFilter] = useState<'all' | 'ski' | 'snowboard'>('all')
@@ -215,9 +223,16 @@ export default function AdminLessonsPage() {
                   <td className="px-4 py-3 capitalize">{lesson.lesson_type} · {lesson.level}</td>
                   <td className="px-4 py-3">{lesson.current_bookings}/{lesson.max_students}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[lesson.status]}`}>
-                      {lesson.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[lesson.status]}`}>
+                        {lesson.status.replace('_', ' ')}
+                      </span>
+                      {needsInstructor(lesson) && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700" title="Confirmed lesson within 2 days has no instructor assigned">
+                          ⚠ No instructor
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

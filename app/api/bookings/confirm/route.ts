@@ -27,21 +27,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  if (booking.status === 'confirmed') {
-    return NextResponse.json({ booking, lesson: booking.lesson })
-  }
-
   // Verify Stripe payment succeeded
   const intent = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id)
   if (intent.status !== 'succeeded') {
     return NextResponse.json({ error: 'Payment not completed' }, { status: 402 })
   }
 
-  // Confirm booking record
-  await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId)
+  // Only update DB if the webhook hasn't already done so
+  const alreadyConfirmed = booking.status === 'confirmed'
+  if (!alreadyConfirmed) {
+    await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId)
+    await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: 1 })
+  }
 
-  // Atomically increment current_bookings and fetch updated count
-  await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: 1 })
   const { data: updatedLesson } = await supabase
     .from('lessons')
     .select('*, instructor:instructors(*)')
