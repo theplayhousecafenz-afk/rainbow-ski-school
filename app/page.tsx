@@ -72,9 +72,9 @@ export default function HomePage() {
                 {
                   name: 'Snowboarding',
                   icon: '🏂',
-                  desc: "Learn to ride with our dedicated snowboard coaches. Snowboard lessons run their own groups and roster.",
-                  color: 'from-purple-600 to-purple-900',
-                  bg: null,
+                  desc: "Learn to ride with our dedicated snowboard coaches. Learn and improve your riding today!",
+                  color: 'from-purple-900/70 to-purple-800/70',
+                  bg: '/snowboard.webp',
                 },
               ].map((d) => (
                 <div
