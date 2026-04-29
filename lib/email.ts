@@ -26,7 +26,7 @@ function baseTemplate(title: string, body: string): string {
 <div class="wrap">
   <div class="hdr"><h1>Rainbow Ski School</h1><p>${title}</p></div>
   <div class="body">${body}</div>
-  <div class="footer">Rainbow Ski Area · Mt Ruapehu, New Zealand · Meet at Mountain Clock</div>
+  <div class="footer">Rainbow Ski Area · St Arnaud, NZ · Meet at Mountain Clock</div>
 </div></body></html>`
 }
 

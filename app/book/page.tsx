@@ -252,7 +252,7 @@ function BookingForm() {
         : 150
       : 0
 
-    async function handleDetailsNext(e: React.FormEvent) {
+    const handleDetailsNext = async (e: React.FormEvent) => {
       e.preventDefault()
       if (!customer.ageConfirmed) { setError('Please confirm the student is 7 years or older.'); return }
       setCreatingIntent(true)
@@ -401,12 +401,12 @@ function BookingForm() {
         </h2>
         {isConfirmed ? (
           <p className="text-slate-600 mb-6">
-            Your {state.discipline?.toUpperCase()} lesson is <strong>confirmed</strong>. We'll see you at the Mountain Clock!
+            Your {state.discipline?.toUpperCase()} lesson is <strong>confirmed</strong>. We&apos;ll see you at the Mountain Clock!
           </p>
         ) : (
           <p className="text-slate-600 mb-6">
             Your payment is confirmed. Your {state.discipline?.toUpperCase()} lesson is <strong>pending minimum numbers</strong>.
-            Once a second student books, you'll get a confirmation email. If the lesson doesn't fill by the cutoff, you'll receive a full refund automatically.
+            Once a second student books, you&apos;ll get a confirmation email. If the lesson doesn&apos;t fill by the cutoff, you&apos;ll receive a full refund automatically.
           </p>
         )}
         {state.bookingId && (

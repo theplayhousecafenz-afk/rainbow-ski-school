@@ -99,7 +99,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
           {/* Status notes */}
           {booking.status === 'pending' && lesson.status === 'pending' && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-              <strong>Pending minimum numbers.</strong> Your lesson will be confirmed once a second student books. If the lesson doesn't reach the minimum by the booking cutoff, you'll receive a full refund.
+              <strong>Pending minimum numbers.</strong> Your lesson will be confirmed once a second student books. If the lesson doesn&apos;t reach the minimum by the booking cutoff, you&apos;ll receive a full refund.
             </div>
           )}
           {booking.status === 'refunded' && (

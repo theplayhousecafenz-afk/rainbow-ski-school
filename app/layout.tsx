@@ -5,9 +5,9 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Rainbow Ski School — Mt Ruapehu',
+  title: 'Rainbow Ski School — Rainbow Ski Area, St Arnaud',
   description:
-    'Book skiing and snowboarding lessons at Rainbow Ski Area, Mt Ruapehu, New Zealand. Group and private lessons every weekend.',
+    'Book skiing and snowboarding lessons at Rainbow Ski Area, Rainbow Ski Area, St Arnaud, New Zealand. Group and private lessons every weekend.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

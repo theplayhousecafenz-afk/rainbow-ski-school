@@ -30,14 +30,13 @@ export default function HomePage() {
         <section className="bg-gradient-to-br from-alpine-900 via-alpine-700 to-blue-800 text-white py-24 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-orange-400 font-semibold text-sm uppercase tracking-widest mb-3">
-              Mt Ruapehu · New Zealand
+              Rainbow Ski Area · St Arnaud, NZ
             </p>
             <h1 className="text-5xl font-extrabold mb-6 leading-tight">
               Rainbow Ski School
             </h1>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-10">
-              Expert skiing and snowboarding lessons every Saturday and Sunday. Beginners
-              welcome — all the way through to advanced shredders.
+              Ski and snowboard lessons every weekend — from first turns to full-send shredders. All levels welcome.
             </p>
             <Link
               href="/book"

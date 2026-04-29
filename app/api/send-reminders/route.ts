@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       .eq('lesson_id', lesson.id)
       .eq('status', 'confirmed')
 
-    const students = (bookings ?? []).map((b) => b.customer as Customer)
+    const students = (bookings ?? []).map((b) => b.customer as unknown as Customer)
     if (students.length === 0) continue
 
     // Email the instructor

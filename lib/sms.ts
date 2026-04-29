@@ -6,8 +6,7 @@ function twilioClient() {
   const token = process.env.TWILIO_AUTH_TOKEN
   const from = process.env.TWILIO_PHONE_NUMBER
   if (!sid || !token || !from) return null
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const twilio = require('twilio')
+  const twilio = require('twilio') /* eslint-disable-line */
   return { client: twilio(sid, token) as ReturnType<typeof twilio>, from }
 }
 

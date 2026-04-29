@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       .eq('status', 'confirmed')
       .neq('id', bookingId)
 
-    const prevStudents = (prevBookings ?? []).map((b) => b.customer as Customer)
+    const prevStudents = (prevBookings ?? []).map((b) => b.customer as unknown as Customer)
     if (prevStudents.length > 0) {
       await sendLessonConfirmedToStudents(prevStudents, lesson)
     }
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
 
-      const students = (allBookings ?? []).map((b) => b.customer as Customer)
+      const students = (allBookings ?? []).map((b) => b.customer as unknown as Customer)
       await sendNewStudentAddedNotifyInstructor(lesson.instructor, lesson, students)
     }
   }
