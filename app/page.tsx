@@ -27,8 +27,12 @@ export default function HomePage() {
       <Nav />
       <main className="flex-1">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-alpine-900 via-alpine-700 to-blue-800 text-white py-24 px-4">
-          <div className="max-w-4xl mx-auto text-center">
+        <section
+          className="relative text-white py-24 px-4"
+          style={{ backgroundImage: 'url(/hero.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+          <div className="absolute inset-0 bg-alpine-900/60" />
+          <div className="relative max-w-4xl mx-auto text-center">
             <p className="text-orange-400 font-semibold text-sm uppercase tracking-widest mb-3">
               Rainbow Ski Area · St Arnaud, NZ
             </p>
@@ -61,29 +65,36 @@ export default function HomePage() {
                 {
                   name: 'Skiing',
                   icon: '⛷️',
-                  desc: 'Carve down groomed runs with our certified ski instructors. Groups are ski-only, taught by ski specialists.',
-                  color: 'from-blue-600 to-blue-800',
+                  desc: 'Carve down groomed runs with our certified ski instructors in a group or private lesson.',
+                  color: 'from-blue-900/70 to-blue-800/70',
+                  bg: '/ski-lesson.jpg',
                 },
                 {
                   name: 'Snowboarding',
                   icon: '🏂',
                   desc: "Learn to ride with our dedicated snowboard coaches. Snowboard lessons run their own groups and roster.",
                   color: 'from-purple-600 to-purple-900',
+                  bg: null,
                 },
               ].map((d) => (
                 <div
                   key={d.name}
-                  className={`rounded-2xl bg-gradient-to-br ${d.color} text-white p-8 shadow-xl`}
+                  className="relative rounded-2xl text-white p-8 shadow-xl overflow-hidden"
+                  style={d.bg ? { backgroundImage: `url(${d.bg})`, backgroundSize: 'cover', backgroundPosition: 'center top' } : {}}
                 >
-                  <div className="text-5xl mb-4">{d.icon}</div>
-                  <h3 className="text-2xl font-bold mb-3">{d.name}</h3>
-                  <p className="text-blue-100 text-sm leading-relaxed mb-6">{d.desc}</p>
-                  <Link
-                    href={`/book?discipline=${d.name.toLowerCase()}`}
-                    className="inline-block bg-white text-slate-900 font-semibold px-6 py-2 rounded-lg text-sm hover:bg-orange-50 transition-colors"
-                  >
-                    Book {d.name} →
-                  </Link>
+                  {d.bg && <div className={`absolute inset-0 bg-gradient-to-br ${d.color}`} />}
+                  {!d.bg && <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${d.color}`} />}
+                  <div className="relative">
+                    <div className="text-5xl mb-4">{d.icon}</div>
+                    <h3 className="text-2xl font-bold mb-3">{d.name}</h3>
+                    <p className="text-blue-100 text-sm leading-relaxed mb-6">{d.desc}</p>
+                    <Link
+                      href={`/book?discipline=${d.name.toLowerCase()}`}
+                      className="inline-block bg-white text-slate-900 font-semibold px-6 py-2 rounded-lg text-sm hover:bg-orange-50 transition-colors"
+                    >
+                      Book {d.name} →
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
