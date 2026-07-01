@@ -11,6 +11,9 @@ export default function Nav() {
           <Link href="/book" className="hover:text-orange-400 transition-colors">
             Book a Lesson
           </Link>
+          <Link href="/faq" className="hover:text-orange-400 transition-colors">
+            FAQs
+          </Link>
           <Link href="/contact" className="hover:text-orange-400 transition-colors">
             Contact
           </Link>
