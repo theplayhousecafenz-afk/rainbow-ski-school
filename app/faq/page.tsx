@@ -113,7 +113,7 @@ const faqs: FAQSection[] = [
       },
       {
         q: "What happens if there aren't enough students for my lesson to run?",
-        a: "Group lessons require a minimum of 2 students. If your lesson has only 1 student at the booking cutoff (Thursday midnight for Saturday, Friday midnight for Sunday), it will be cancelled and you will be automatically refunded in full. If you would still like a lesson on the same day, contact us as soon as possible and we will do our best to arrange an alternative.",
+        a: "Group lessons require a minimum of 2 students. If your lesson has only 1 student at the booking cutoff (Thursday midnight for Saturday, Friday midnight for Sunday), it will be cancelled and you will be automatically refunded in full. If you would still like a lesson on the same day, email us at snowsports@skirainbow.co.nz as soon as possible and we will do our best to arrange an alternative.",
       },
       {
         q: 'How long do refunds take?',
@@ -138,7 +138,7 @@ const faqs: FAQSection[] = [
       },
       {
         q: 'Can I request a specific instructor?',
-        a: 'We will do our best to accommodate requests for specific instructors, but cannot guarantee availability. If you have a preference, contact us after booking and we will note it for scheduling.',
+        a: 'We will do our best to accommodate requests for specific instructors, but cannot guarantee availability. If you have a preference, email us at snowsports@skirainbow.co.nz after booking and we will note it for scheduling.',
       },
       {
         q: 'Can I contact my instructor before the lesson?',
@@ -199,7 +199,7 @@ const faqs: FAQSection[] = [
       },
       {
         q: 'What if I entered the wrong contact details?',
-        a: 'Contact us as soon as possible with your booking reference and we will update your details. It is important your email and phone number are correct so you receive all lesson communications.',
+        a: 'Email us at snowsports@skirainbow.co.nz as soon as possible with your booking reference and we will update your details. It is important your email and phone number are correct so you receive all lesson communications.',
       },
     ],
   },
@@ -208,7 +208,7 @@ const faqs: FAQSection[] = [
     items: [
       {
         q: 'How do I get in touch?',
-        a: 'For general enquiries, use the contact form on our website or reach us via email. We aim to respond within 24 hours. For urgent day-of questions, your instructor is your best point of contact once assigned.',
+        a: 'For general enquiries, use the contact form on our website or email us at snowsports@skirainbow.co.nz. We aim to respond within 24 hours. For urgent day-of questions, your instructor is your best point of contact once assigned.',
       },
       {
         q: 'Where is Rainbow Ski Area?',

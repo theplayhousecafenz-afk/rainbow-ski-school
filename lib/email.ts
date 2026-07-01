@@ -4,7 +4,7 @@ import { formatNZDate, formatTime } from './booking-utils'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
 const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'snowsports@skirainbow.co.nz'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
 function baseTemplate(title: string, body: string): string {
