@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 import type { Customer, Lesson, Booking, Instructor, Enquiry } from '@/types'
 import { formatNZDate, formatTime } from './booking-utils'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResend = () => new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
 const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
@@ -32,7 +32,7 @@ function baseTemplate(title: string, body: string): string {
 
 async function send(to: string, subject: string, html: string) {
   try {
-    await resend.emails.send({ from: FROM, to, subject, html })
+    await getResend().emails.send({ from: FROM, to, subject, html })
   } catch (err) {
     console.error('[Email] Failed to send to', to, err)
   }
