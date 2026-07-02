@@ -21,6 +21,7 @@ interface BookingState {
   date: string | null
   lesson: AnnotatedLesson | null
   customer: { name: string; email: string; phone: string; customerType: CustomerType; ageConfirmed: boolean }
+  quantity: number
   clientSecret: string | null
   bookingId: string | null
   lessonAfterPayment: Lesson | null
@@ -31,6 +32,7 @@ const INITIAL_STATE: BookingState = {
   date: null,
   lesson: null,
   customer: { name: '', email: '', phone: '', customerType: 'adult', ageConfirmed: false },
+  quantity: 1,
   clientSecret: null,
   bookingId: null,
   lessonAfterPayment: null,
@@ -271,14 +273,17 @@ function BookingForm() {
   // ── Step 4: Customer details ───────────────────────────────────────────────
   if (step === 4) {
     const { customer } = state
-    const basePrice = state.lesson
+    const unitPrice = state.lesson
       ? state.lesson.lesson_type === 'group'
         ? customer.customerType === 'adult' ? 90 : 60
         : 150
       : 0
+    const basePrice = unitPrice * state.quantity
     const price = promoStatus
       ? Math.max(1, Math.round(basePrice * (1 - promoStatus.discount / 100)))
       : basePrice
+    const spotsLeft = state.lesson ? state.lesson.max_students - state.lesson.current_bookings : 1
+    const maxQty = state.lesson?.lesson_type === 'private' ? 1 : Math.min(spotsLeft, 8)
 
     const handleDetailsNext = async (e: React.FormEvent) => {
       e.preventDefault()
@@ -296,6 +301,7 @@ function BookingForm() {
             email: customer.email,
             phone: customer.phone,
             promoCode: promoStatus?.code ?? undefined,
+            quantity: state.quantity,
           }),
         })
         const data = await res.json()
@@ -347,6 +353,19 @@ function BookingForm() {
               placeholder="+64 21 000 0000"
             />
           </FormField>
+          {state.lesson?.lesson_type === 'group' && (
+            <FormField label="Number of Students">
+              <select
+                value={state.quantity}
+                onChange={(e) => setState({ ...state, quantity: parseInt(e.target.value) })}
+                className={inp}
+              >
+                {Array.from({ length: maxQty }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={n}>{n} {n === 1 ? 'student' : 'students'}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
           <FormField label="Age Category">
             <select
               value={customer.customerType}
@@ -397,21 +416,24 @@ function BookingForm() {
             )}
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-600">
-                {state.lesson?.lesson_type === 'group' ? 'Group lesson (1.5 hrs)' : 'Private lesson (per hour)'}
-              </span>
-              <div className="text-right">
-                {promoStatus && (
-                  <span className="text-slate-400 line-through text-xs mr-2">${basePrice} NZD</span>
-                )}
-                <span className="font-bold text-alpine-900">${price} NZD</span>
-              </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm space-y-1">
+            <div className="flex justify-between text-slate-600">
+              <span>{state.lesson?.lesson_type === 'group' ? 'Group lesson (1.5 hrs)' : 'Private lesson (per hour)'}</span>
+              <span>${unitPrice} × {state.quantity}</span>
             </div>
             {promoStatus && (
-              <p className="text-green-600 text-xs mt-1">{promoStatus.discount}% promo discount applied</p>
+              <div className="flex justify-between text-slate-400 text-xs">
+                <span>{promoStatus.discount}% promo discount</span>
+                <span>−${basePrice - price}</span>
+              </div>
             )}
+            <div className="flex justify-between font-bold text-alpine-900 border-t border-slate-200 pt-1 mt-1">
+              <span>Total</span>
+              <div>
+                {promoStatus && <span className="text-slate-400 line-through text-xs mr-2">${basePrice}</span>}
+                <span>${price} NZD</span>
+              </div>
+            </div>
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -420,7 +442,7 @@ function BookingForm() {
             disabled={creatingIntent}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60"
           >
-            {creatingIntent ? 'Setting up payment…' : `Continue to Payment — $${price} NZD`}
+            {creatingIntent ? 'Setting up payment…' : `Continue to Payment — $${price} NZD${state.quantity > 1 ? ` (${state.quantity} students)` : ''}`}
           </button>
           <div className="text-center">
             <button type="button" onClick={() => go(3)} className="text-sm text-slate-400 hover:text-slate-600">← Back</button>

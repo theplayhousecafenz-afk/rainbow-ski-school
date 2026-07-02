@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createServerSupabase } from '@/lib/supabase'
 import { formatNZDate, formatTime } from '@/lib/booking-utils'
 import type { Lesson, Booking, Customer, Availability, Instructor } from '@/types'
+import AssignInstructor from './assign-instructor'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,7 @@ const AVAIL_COLORS: Record<string, string> = {
 export default async function AdminLessonDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabase()
 
-  const [{ data: lesson, error }, { data: bookings }, { data: availabilities }] =
+  const [{ data: lesson, error }, { data: bookings }, { data: availabilities }, { data: allInstructors }] =
     await Promise.all([
       supabase
         .from('lessons')
@@ -38,6 +39,11 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
         .from('availability')
         .select('*, instructor:instructors(*)')
         .eq('lesson_id', params.id),
+      supabase
+        .from('instructors')
+        .select('*')
+        .eq('active', true)
+        .order('name'),
     ])
 
   if (error || !lesson) notFound()
@@ -45,6 +51,8 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
   const l = lesson as Lesson
   const bkgs = (bookings ?? []) as Array<Booking & { customer: Customer }>
   const avails = (availabilities ?? []) as Array<Availability & { instructor: Instructor }>
+  const instructors = (allInstructors ?? []) as Instructor[]
+  const disciplineInstructors = instructors.filter(i => i.discipline === l.discipline)
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -75,6 +83,13 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
           {l.instructor && <Info label="Instructor" value={`${l.instructor.name} (${l.instructor.phone})`} />}
         </div>
       </div>
+
+      {/* Assign instructor */}
+      <AssignInstructor
+        lessonId={l.id}
+        currentInstructorId={l.instructor_id}
+        instructors={disciplineInstructors}
+      />
 
       {/* Bookings */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">

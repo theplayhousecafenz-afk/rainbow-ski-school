@@ -26,7 +26,11 @@ function baseTemplate(title: string, body: string): string {
 <div class="wrap">
   <div class="hdr"><h1>Rainbow Ski School</h1><p>${title}</p></div>
   <div class="body">${body}</div>
-  <div class="footer">Rainbow Ski Area · St Arnaud, NZ · Meet at Mountain Clock</div>
+  <div class="footer">
+    Rainbow Ski Area · St Arnaud, NZ · Meet at Mountain Clock<br>
+    <strong>Please do not reply to this email.</strong> For enquiries contact <a href="mailto:snowsports@skirainbow.co.nz" style="color:#64748b">snowsports@skirainbow.co.nz</a><br>
+    <a href="${BASE_URL}/faq" style="color:#64748b">Frequently Asked Questions</a>
+  </div>
 </div></body></html>`
 }
 

@@ -54,3 +54,17 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ lesson: data }, { status: 201 })
 }
+
+export async function PATCH(request: NextRequest) {
+  const { id, instructor_id } = await request.json()
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const supabase = createServerSupabase()
+  const { error } = await supabase
+    .from('lessons')
+    .update({ instructor_id: instructor_id ?? null })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}

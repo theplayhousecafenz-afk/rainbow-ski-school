@@ -6,14 +6,16 @@ import type { Lesson, CustomerType } from '@/types'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { lessonId, customerType, name, email, phone, promoCode } = body as {
+  const { lessonId, customerType, name, email, phone, promoCode, quantity } = body as {
     lessonId: string
     customerType: CustomerType
     name: string
     email: string
     phone: string
     promoCode?: string
+    quantity?: number
   }
+  const qty = Math.max(1, Math.min(quantity ?? 1, 8))
 
   if (!lessonId || !customerType || !name || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: availability.reason }, { status: 409 })
   }
 
-  let amount = getPrice(lesson.lesson_type, customerType)
+  let amount = getPrice(lesson.lesson_type, customerType) * qty
 
   // Apply promo code if provided
   let appliedPromoCode: string | null = null
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
       customerId: customer.id,
       customerType,
       discipline: lesson.discipline,
+      quantity: String(qty),
       ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
     },
   })

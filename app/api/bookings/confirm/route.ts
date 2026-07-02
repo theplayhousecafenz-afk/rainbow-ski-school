@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
 
   // Only update DB if the webhook hasn't already done so
   const alreadyConfirmed = booking.status === 'confirmed'
+  const qty = parseInt(intent.metadata?.quantity ?? '1') || 1
   if (!alreadyConfirmed) {
     await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId)
-    await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: 1 })
+    await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: qty })
   }
 
   const { data: updatedLesson } = await supabase
