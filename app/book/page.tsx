@@ -72,12 +72,37 @@ function BookingForm() {
   const [loadingLessons, setLoadingLessons] = useState(false)
   const [error, setError] = useState('')
   const [creatingIntent, setCreatingIntent] = useState(false)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoStatus, setPromoStatus] = useState<{ discount: number; code: string } | null>(null)
+  const [promoError, setPromoError] = useState('')
+  const [checkingPromo, setCheckingPromo] = useState(false)
 
   // If discipline was passed in query, skip to step 2
   useEffect(() => {
     if (state.discipline && step === 1) setStep(2)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function applyPromo() {
+    if (!promoCode.trim()) return
+    setCheckingPromo(true)
+    setPromoError('')
+    setPromoStatus(null)
+    try {
+      const res = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setPromoError(data.error ?? 'Invalid code'); return }
+      setPromoStatus({ discount: data.discount_percent, code: data.code })
+    } catch {
+      setPromoError('Could not check code — please try again')
+    } finally {
+      setCheckingPromo(false)
+    }
+  }
 
   async function fetchLessons(date: string, discipline: Discipline) {
     setLoadingLessons(true)
@@ -246,11 +271,14 @@ function BookingForm() {
   // ── Step 4: Customer details ───────────────────────────────────────────────
   if (step === 4) {
     const { customer } = state
-    const price = state.lesson
+    const basePrice = state.lesson
       ? state.lesson.lesson_type === 'group'
         ? customer.customerType === 'adult' ? 90 : 60
         : 150
       : 0
+    const price = promoStatus
+      ? Math.max(1, Math.round(basePrice * (1 - promoStatus.discount / 100)))
+      : basePrice
 
     const handleDetailsNext = async (e: React.FormEvent) => {
       e.preventDefault()
@@ -267,6 +295,7 @@ function BookingForm() {
             name: customer.name,
             email: customer.email,
             phone: customer.phone,
+            promoCode: promoStatus?.code ?? undefined,
           }),
         })
         const data = await res.json()
@@ -340,13 +369,49 @@ function BookingForm() {
             </span>
           </label>
 
+          {/* Promo code */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Promo Code (optional)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoStatus(null); setPromoError('') }}
+                className={inp}
+                placeholder="Enter code"
+              />
+              <button
+                type="button"
+                onClick={applyPromo}
+                disabled={checkingPromo || !promoCode.trim()}
+                className="shrink-0 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 disabled:opacity-50 transition-colors"
+              >
+                {checkingPromo ? '...' : 'Apply'}
+              </button>
+            </div>
+            {promoStatus && (
+              <p className="text-green-600 text-sm mt-1 font-medium">✓ {promoStatus.discount}% discount applied!</p>
+            )}
+            {promoError && (
+              <p className="text-red-500 text-sm mt-1">{promoError}</p>
+            )}
+          </div>
+
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-600">
                 {state.lesson?.lesson_type === 'group' ? 'Group lesson (1.5 hrs)' : 'Private lesson (per hour)'}
               </span>
-              <span className="font-bold text-alpine-900">${price} NZD</span>
+              <div className="text-right">
+                {promoStatus && (
+                  <span className="text-slate-400 line-through text-xs mr-2">${basePrice} NZD</span>
+                )}
+                <span className="font-bold text-alpine-900">${price} NZD</span>
+              </div>
             </div>
+            {promoStatus && (
+              <p className="text-green-600 text-xs mt-1">{promoStatus.discount}% promo discount applied</p>
+            )}
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}

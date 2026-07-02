@@ -6,12 +6,13 @@ import type { Lesson, CustomerType } from '@/types'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { lessonId, customerType, name, email, phone } = body as {
+  const { lessonId, customerType, name, email, phone, promoCode } = body as {
     lessonId: string
     customerType: CustomerType
     name: string
     email: string
     phone: string
+    promoCode?: string
   }
 
   if (!lessonId || !customerType || !name || !email || !phone) {
@@ -36,7 +37,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: availability.reason }, { status: 409 })
   }
 
-  const amount = getPrice(lesson.lesson_type, customerType)
+  let amount = getPrice(lesson.lesson_type, customerType)
+
+  // Apply promo code if provided
+  let appliedPromoCode: string | null = null
+  if (promoCode) {
+    const { data: promo } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .eq('code', promoCode.toUpperCase().trim())
+      .single()
+
+    if (
+      promo &&
+      promo.active &&
+      new Date(promo.expires_at) >= new Date() &&
+      promo.current_uses < promo.max_uses
+    ) {
+      amount = Math.round(amount * (1 - promo.discount_percent / 100))
+      // Stripe requires minimum 50 cents
+      if (amount < 50) amount = 50
+      appliedPromoCode = promo.code
+    }
+  }
 
   // Upsert customer
   let customer
@@ -71,6 +94,7 @@ export async function POST(request: NextRequest) {
       customerId: customer.id,
       customerType,
       discipline: lesson.discipline,
+      ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
     },
   })
 
@@ -94,8 +118,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: bookingErr.message }, { status: 500 })
   }
 
+  // Increment promo code usage
+  if (appliedPromoCode) {
+    await supabase.rpc('increment_promo_usage', { promo_code: appliedPromoCode })
+  }
+
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
     bookingId: booking.id,
+    discountApplied: appliedPromoCode ? true : false,
   })
 }

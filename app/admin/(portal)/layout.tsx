@@ -29,6 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Link href="/admin/reports" className="hover:text-orange-300 transition-colors">
           Reports
         </Link>
+        <Link href="/admin/promos" className="hover:text-orange-300 transition-colors">
+          Promo Codes
+        </Link>
         <div className="ml-auto">
           <button
             onClick={logout}
