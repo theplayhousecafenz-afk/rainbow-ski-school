@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const alreadyConfirmed = booking.status === 'confirmed'
   const qty = parseInt(intent.metadata?.quantity ?? '1') || 1
   if (!alreadyConfirmed) {
-    await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId)
+    await supabase.from('bookings').update({ status: 'confirmed', quantity: qty }).eq('id', bookingId)
     await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: qty })
   }
 
@@ -82,11 +82,14 @@ export async function POST(request: NextRequest) {
     if (lesson.instructor_id && lesson.instructor) {
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('customer:customers(*)')
+        .select('quantity, customer:customers(*)')
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
-      const students = (allBookings ?? []).map((b) => b.customer as unknown as Customer)
-      await sendInstructorLessonConfirmed(lesson.instructor as Instructor, lesson, students)
+      const studentEntries = (allBookings ?? []).map((b) => ({
+        customer: b.customer as unknown as Customer,
+        quantity: (b.quantity as number) ?? 1,
+      }))
+      await sendInstructorLessonConfirmed(lesson.instructor as Instructor, lesson, studentEntries)
     }
   } else {
     // Additional student on already-confirmed lesson
@@ -96,11 +99,14 @@ export async function POST(request: NextRequest) {
     if (lesson.instructor_id && lesson.instructor) {
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('customer:customers(*)')
+        .select('quantity, customer:customers(*)')
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
-      const students = (allBookings ?? []).map((b) => b.customer as unknown as Customer)
-      await sendNewStudentAddedNotifyInstructor(lesson.instructor as Instructor, lesson, students)
+      const studentEntries = (allBookings ?? []).map((b) => ({
+        customer: b.customer as unknown as Customer,
+        quantity: (b.quantity as number) ?? 1,
+      }))
+      await sendNewStudentAddedNotifyInstructor(lesson.instructor as Instructor, lesson, studentEntries)
     }
   }
 

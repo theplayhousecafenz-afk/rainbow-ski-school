@@ -255,19 +255,20 @@ export async function sendStudentReminder(
 export async function sendNewStudentAddedNotifyInstructor(
   instructor: Instructor,
   lesson: Lesson,
-  students: Customer[]
+  students: Array<{ customer: Customer; quantity: number }>
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
-  const subject = `[${disc}] New student added — now ${students.length}/${lesson.max_students}`
+  const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+  const subject = `[${disc}] New student added — now ${totalStudents}/${lesson.max_students}`
   const studentRows = students
-    .map((s) => `<tr><td>${s.name}</td><td>${s.phone}</td></tr>`)
+    .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td style="text-align:center">${s.quantity}</td></tr>`)
     .join('')
   const html = baseTemplate(
     `${disc} Lesson — Student Update`,
     `<p>Hi ${instructor.name},</p>
-    <p>A new student has joined your <strong>${disc}</strong> lesson. Updated headcount: <strong>${students.length}/${lesson.max_students}</strong>.</p>
+    <p>A new booking has been added to your <strong>${disc}</strong> lesson. Updated headcount: <strong>${totalStudents}/${lesson.max_students}</strong>.</p>
     ${lessonInfo(lesson)}
-    <table><tr><th>Name</th><th>Phone</th></tr>${studentRows}</table>`
+    <table><tr><th>Name</th><th>Phone</th><th>Students</th></tr>${studentRows}</table>`
   )
   await send(instructor.email, subject, html)
 }
@@ -322,20 +323,21 @@ export async function sendAdminLessonCancelledNoBookings(lesson: Lesson): Promis
 export async function sendInstructorLessonConfirmed(
   instructor: Instructor,
   lesson: Lesson,
-  students: Customer[]
+  students: Array<{ customer: Customer; quantity: number }>
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
-  const subject = `[${disc}] Your lesson is confirmed — ${students.length} student${students.length !== 1 ? 's' : ''} booked`
+  const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+  const subject = `[${disc}] Your lesson is confirmed — ${totalStudents} student${totalStudents !== 1 ? 's' : ''} booked`
   const studentRows = students
-    .map((s) => `<tr><td>${s.name}</td><td>${s.phone}</td><td>${s.email}</td></tr>`)
+    .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td>${s.customer.email}</td><td style="text-align:center">${s.quantity}</td></tr>`)
     .join('')
   const html = baseTemplate(
     `${disc} Lesson — Confirmed`,
     `<p>Hi ${instructor.name},</p>
     <p>Great news! Your assigned <strong>${disc}</strong> lesson has reached the minimum number of students and is now <strong>confirmed</strong>.</p>
     ${lessonInfo(lesson)}
-    <h3 style="font-size:15px;margin-top:24px">Students (${students.length})</h3>
-    <table><tr><th>Name</th><th>Phone</th><th>Email</th></tr>${studentRows}</table>
+    <h3 style="font-size:15px;margin-top:24px">Bookings (${totalStudents} student${totalStudents !== 1 ? 's' : ''} total)</h3>
+    <table><tr><th>Name</th><th>Phone</th><th>Email</th><th>Students</th></tr>${studentRows}</table>
     <p>You'll receive a full reminder the evening before the lesson. If you have any questions, contact the ski school at <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a>.</p>`
   )
   await send(instructor.email, subject, html)
