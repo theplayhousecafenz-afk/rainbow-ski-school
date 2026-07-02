@@ -8,7 +8,7 @@ import {
   sendNewStudentAddedNotifyInstructor,
   sendInstructorLessonConfirmed,
 } from '@/lib/email'
-import type { Lesson, Customer, Booking } from '@/types'
+import type { Lesson, Customer, Booking, Instructor } from '@/types'
 
 export async function POST(request: NextRequest) {
   const { bookingId } = await request.json()
