@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
 
   if (!justConfirmed && newCount < minStudents) {
     // Still below minimum — lesson pending
-    await sendBookingPending(customer, lesson, confirmedBooking)
+    await sendBookingPending(customer, lesson, confirmedBooking, qty)
   } else if (justConfirmed) {
     // Just hit minimum — confirm the lesson
     await supabase.from('lessons').update({ status: 'confirmed' }).eq('id', lesson.id)
-    await sendBookingConfirmed(customer, lesson, confirmedBooking)
+    await sendBookingConfirmed(customer, lesson, confirmedBooking, qty)
 
     // Notify any other students who booked earlier that lesson is now confirmed
     const { data: prevBookings } = await supabase
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
   } else {
     // Additional student on already-confirmed lesson
-    await sendBookingConfirmed(customer, lesson, confirmedBooking)
+    await sendBookingConfirmed(customer, lesson, confirmedBooking, qty)
 
     // Notify rostered instructor of the new headcount
     if (lesson.instructor_id && lesson.instructor) {

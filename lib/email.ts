@@ -58,15 +58,20 @@ function lessonInfo(lesson: Lesson): string {
 export async function sendBookingPending(
   customer: Customer,
   lesson: Lesson,
-  booking: Booking
+  booking: Booking,
+  quantity = 1
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Booking received — pending confirmation`
+  const studentLine = quantity > 1
+    ? `<p>You have booked <strong>${quantity} students</strong> into this lesson.</p>`
+    : ''
   const html = baseTemplate(
     `${disc} Lesson Booking`,
     `<p>Hi ${customer.name},</p>
     <p>Thanks for booking a <strong>${disc}</strong> lesson with Rainbow Ski School! Your payment of <strong>$${(booking.amount_paid / 100).toFixed(2)} NZD</strong> has been received.</p>
-    <p>Your lesson is currently <strong>pending minimum numbers</strong>. Once a second student books, the lesson will be confirmed and we'll let you know.</p>
+    ${studentLine}
+    <p>Your lesson is currently <strong>pending minimum numbers</strong>. Once enough students have booked, the lesson will be confirmed and we'll let you know.</p>
     <p>If the lesson doesn't reach the minimum by the booking cutoff, it will be cancelled and you'll receive a full refund.</p>
     ${lessonInfo(lesson)}
     <a class="btn" href="${BASE_URL}/booking/${booking.id}">View Booking</a>`
@@ -78,14 +83,19 @@ export async function sendBookingPending(
 export async function sendBookingConfirmed(
   customer: Customer,
   lesson: Lesson,
-  booking: Booking
+  booking: Booking,
+  quantity = 1
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Booking confirmed — see you on the mountain!`
+  const studentLine = quantity > 1
+    ? `<p>You have booked <strong>${quantity} students</strong> into this lesson.</p>`
+    : ''
   const html = baseTemplate(
     `${disc} Lesson Confirmed`,
     `<p>Hi ${customer.name},</p>
     <p>Great news — your <strong>${disc}</strong> lesson is <strong>confirmed</strong>! Payment of <strong>$${(booking.amount_paid / 100).toFixed(2)} NZD</strong> received.</p>
+    ${studentLine}
     ${lessonInfo(lesson)}
     <p>Come prepared with appropriate gear. We look forward to seeing you on the snow!</p>
     <a class="btn" href="${BASE_URL}/booking/${booking.id}">View Booking</a>`
