@@ -6,6 +6,7 @@ import {
   sendBookingConfirmed,
   sendLessonConfirmedToStudents,
   sendNewStudentAddedNotifyInstructor,
+  sendInstructorLessonConfirmed,
 } from '@/lib/email'
 import type { Lesson, Customer, Booking } from '@/types'
 
@@ -51,16 +52,20 @@ export async function POST(request: NextRequest) {
   const customer = booking.customer as Customer
   const confirmedBooking = { ...booking, status: 'confirmed' } as Booking
   const newCount = lesson.current_bookings // post-increment count
+  const minStudents = lesson.min_students ?? 2
 
-  if (newCount === 1) {
-    // First student — lesson is pending minimum numbers
+  // Did this booking push the lesson over the minimum for the first time?
+  const justConfirmed = !alreadyConfirmed && newCount >= minStudents
+
+  if (!justConfirmed && newCount < minStudents) {
+    // Still below minimum — lesson pending
     await sendBookingPending(customer, lesson, confirmedBooking)
-  } else if (newCount === 2) {
-    // Second student — lesson just hit the minimum
+  } else if (justConfirmed) {
+    // Just hit minimum — confirm the lesson
     await supabase.from('lessons').update({ status: 'confirmed' }).eq('id', lesson.id)
     await sendBookingConfirmed(customer, lesson, confirmedBooking)
 
-    // Notify the first student that the lesson is now confirmed
+    // Notify any other students who booked earlier that lesson is now confirmed
     const { data: prevBookings } = await supabase
       .from('bookings')
       .select('customer:customers(*)')
@@ -72,8 +77,19 @@ export async function POST(request: NextRequest) {
     if (prevStudents.length > 0) {
       await sendLessonConfirmedToStudents(prevStudents, lesson)
     }
+
+    // Notify pre-assigned instructor that their lesson is now confirmed
+    if (lesson.instructor_id && lesson.instructor) {
+      const { data: allBookings } = await supabase
+        .from('bookings')
+        .select('customer:customers(*)')
+        .eq('lesson_id', booking.lesson_id)
+        .eq('status', 'confirmed')
+      const students = (allBookings ?? []).map((b) => b.customer as unknown as Customer)
+      await sendInstructorLessonConfirmed(lesson.instructor as Instructor, lesson, students)
+    }
   } else {
-    // Third+ student — lesson was already confirmed
+    // Additional student on already-confirmed lesson
     await sendBookingConfirmed(customer, lesson, confirmedBooking)
 
     // Notify rostered instructor of the new headcount
@@ -83,9 +99,8 @@ export async function POST(request: NextRequest) {
         .select('customer:customers(*)')
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
-
       const students = (allBookings ?? []).map((b) => b.customer as unknown as Customer)
-      await sendNewStudentAddedNotifyInstructor(lesson.instructor, lesson, students)
+      await sendNewStudentAddedNotifyInstructor(lesson.instructor as Instructor, lesson, students)
     }
   }
 

@@ -18,14 +18,17 @@ export default async function AdminOverviewPage() {
   const supabase = createServerSupabase()
   const today = new Date().toISOString().slice(0, 10)
 
-  const { data: lessons } = await supabase
+  const { data: lessons, error: lessonErr } = await supabase
     .from('lessons')
     .select('*, instructor:instructors(name)')
     .gte('date', today)
-    .not('status', 'in', '("cancelled","closed")')
+    .neq('status', 'cancelled')
+    .neq('status', 'closed')
     .order('date')
     .order('start_time')
     .limit(60)
+
+  if (lessonErr) console.error('[Admin overview] lessons query error:', lessonErr)
 
   // Group by date then discipline
   const byDate: Record<string, { ski: Lesson[]; snowboard: Lesson[] }> = {}

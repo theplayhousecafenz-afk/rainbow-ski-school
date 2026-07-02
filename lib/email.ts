@@ -27,9 +27,10 @@ function baseTemplate(title: string, body: string): string {
   <div class="hdr"><h1>Rainbow Ski School</h1><p>${title}</p></div>
   <div class="body">${body}</div>
   <div class="footer">
-    Rainbow Ski Area · St Arnaud, NZ · Meet at Mountain Clock<br>
-    <strong>Please do not reply to this email.</strong> For enquiries contact <a href="mailto:snowsports@skirainbow.co.nz" style="color:#64748b">snowsports@skirainbow.co.nz</a><br>
-    <a href="${BASE_URL}/faq" style="color:#64748b">Frequently Asked Questions</a>
+    Rainbow Ski Area · St Arnaud, NZ · Meet at Mountain Clock<br><br>
+    <strong style="color:#475569">Please do not reply to this email.</strong><br>
+    For enquiries contact <a href="mailto:snowsports@skirainbow.co.nz" style="color:#1e3a8a;font-weight:600">snowsports@skirainbow.co.nz</a>
+    &nbsp;·&nbsp; <a href="${BASE_URL}/faq" style="color:#1e3a8a">FAQs</a>
   </div>
 </div></body></html>`
 }
@@ -305,6 +306,29 @@ export async function sendAdminLessonCancelledNoBookings(lesson: Lesson): Promis
     ${lessonInfo(lesson)}`
   )
   await send(ADMIN_EMAIL, subject, html)
+}
+
+// 12. Instructor notification — lesson just confirmed (min students reached), pre-assigned
+export async function sendInstructorLessonConfirmed(
+  instructor: Instructor,
+  lesson: Lesson,
+  students: Customer[]
+): Promise<void> {
+  const disc = lesson.discipline.toUpperCase()
+  const subject = `[${disc}] Your lesson is confirmed — ${students.length} student${students.length !== 1 ? 's' : ''} booked`
+  const studentRows = students
+    .map((s) => `<tr><td>${s.name}</td><td>${s.phone}</td><td>${s.email}</td></tr>`)
+    .join('')
+  const html = baseTemplate(
+    `${disc} Lesson — Confirmed`,
+    `<p>Hi ${instructor.name},</p>
+    <p>Great news! Your assigned <strong>${disc}</strong> lesson has reached the minimum number of students and is now <strong>confirmed</strong>.</p>
+    ${lessonInfo(lesson)}
+    <h3 style="font-size:15px;margin-top:24px">Students (${students.length})</h3>
+    <table><tr><th>Name</th><th>Phone</th><th>Email</th></tr>${studentRows}</table>
+    <p>You'll receive a full reminder the evening before the lesson. If you have any questions, contact the ski school at <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a>.</p>`
+  )
+  await send(instructor.email, subject, html)
 }
 
 // Admin notification — lesson cancelled (1 booking at cutoff, refund issued)
