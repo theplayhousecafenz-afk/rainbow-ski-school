@@ -167,6 +167,41 @@ export async function sendMountainClosureRefund(
   await send(customer.email, subject, html)
 }
 
+// 6a. Instructor assigned to lesson by admin
+export async function sendInstructorAssigned(
+  instructor: Instructor,
+  lesson: Lesson
+): Promise<void> {
+  const disc = lesson.discipline.toUpperCase()
+  const subject = `[${disc}] You've been assigned a lesson — ${formatNZDate(lesson.date)}`
+  const html = baseTemplate(
+    `${disc} Lesson — You've Been Assigned`,
+    `<p>Hi ${instructor.name},</p>
+    <p>You have been assigned to the following <strong>${disc}</strong> lesson by the Rainbow Ski School admin team:</p>
+    ${lessonInfo(lesson)}
+    <p>You'll receive another email once the lesson reaches minimum bookings and is confirmed. If you have any questions contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a>.</p>`
+  )
+  await send(instructor.email, subject, html)
+}
+
+// 6b. Instructor notified — lesson cancelled before minimum bookings reached
+export async function sendInstructorLessonCancelled(
+  instructor: Instructor,
+  lesson: Lesson
+): Promise<void> {
+  const disc = lesson.discipline.toUpperCase()
+  const subject = `[${disc}] Lesson cancelled — ${formatNZDate(lesson.date)}`
+  const html = baseTemplate(
+    `${disc} Lesson — Cancelled`,
+    `<p>Hi ${instructor.name},</p>
+    <p>Unfortunately the following <strong>${disc}</strong> lesson has been cancelled as it did not reach the minimum number of bookings by the cutoff time:</p>
+    ${lessonInfo(lesson)}
+    <p>You are no longer required for this lesson. We'll be in touch when another lesson comes up that needs you.</p>
+    <p>If you have any questions contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a>.</p>`
+  )
+  await send(instructor.email, subject, html)
+}
+
 // 6. Instructor availability request — with confirm/decline token links
 export async function sendInstructorAvailabilityRequest(
   instructor: Instructor,

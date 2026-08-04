@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
-import type { Discipline } from '@/types'
+import { sendInstructorAssigned } from '@/lib/email'
+import type { Discipline, Instructor, Lesson } from '@/types'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -66,5 +67,17 @@ export async function PATCH(request: NextRequest) {
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Email the newly assigned instructor (if one was set, not cleared)
+  if (instructor_id) {
+    const [{ data: instructor }, { data: lesson }] = await Promise.all([
+      supabase.from('instructors').select('*').eq('id', instructor_id).single(),
+      supabase.from('lessons').select('*').eq('id', id).single(),
+    ])
+    if (instructor && lesson) {
+      await sendInstructorAssigned(instructor as Instructor, lesson as Lesson)
+    }
+  }
+
   return NextResponse.json({ success: true })
 }

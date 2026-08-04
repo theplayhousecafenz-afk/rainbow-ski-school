@@ -4,10 +4,11 @@ import { stripe } from '@/lib/stripe'
 import {
   sendLessonCancelledInsufficientBookings,
   sendInstructorAvailabilityRequest,
+  sendInstructorLessonCancelled,
   sendAdminLessonCancelledNoBookings,
   sendAdminLessonCancelledOneBooking,
 } from '@/lib/email'
-import type { Customer, Lesson, Booking, Instructor } from '@/types'
+import type { Customer, Lesson, Booking, Instructor, BookingStatus } from '@/types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
   const { data: lessons, error } = await supabase
     .from('lessons')
-    .select('*')
+    .select('*, instructor:instructors(*)')
     .eq('date', targetDateStr)
     .eq('status', 'pending')
 
@@ -54,9 +55,12 @@ export async function GET(request: NextRequest) {
 
     const count = bookings?.length ?? 0
 
+    const instructor = lesson.instructor as Instructor | null
+
     if (count === 0) {
       await supabase.from('lessons').update({ status: 'cancelled' }).eq('id', lesson.id)
       await sendAdminLessonCancelledNoBookings(lesson as Lesson)
+      if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
       processed[lesson.id] = 'cancelled (0 bookings)'
     } else if (count === 1) {
       const booking = bookings![0] as Booking & { customer: Customer }
@@ -92,6 +96,7 @@ export async function GET(request: NextRequest) {
         (privateOptions ?? []) as Lesson[]
       )
       await sendAdminLessonCancelledOneBooking(lesson as Lesson, booking.customer)
+      if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
       processed[lesson.id] = 'cancelled (1 booking, refunded)'
     } else {
       // 2+ bookings — confirm lesson, notify instructors
