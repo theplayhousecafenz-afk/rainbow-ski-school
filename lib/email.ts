@@ -210,20 +210,21 @@ export async function sendInstructorConfirmedAck(
 export async function sendInstructorReminder(
   instructor: Instructor,
   lesson: Lesson,
-  students: Array<Customer>
+  students: Array<{ customer: Customer; quantity: number }>
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
-  const subject = `[${disc}] Tomorrow's lesson reminder — ${students.length} student${students.length !== 1 ? 's' : ''}`
+  const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+  const subject = `[${disc}] Tomorrow's lesson reminder — ${totalStudents} student${totalStudents !== 1 ? 's' : ''}`
   const studentRows = students
-    .map((s) => `<tr><td>${s.name}</td><td>${s.phone}</td><td>${s.email}</td></tr>`)
+    .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td>${s.customer.email}</td><td style="text-align:center">${s.quantity}</td></tr>`)
     .join('')
   const html = baseTemplate(
     `${disc} Lesson — Reminder`,
     `<p>Hi ${instructor.name},</p>
     <p>This is your reminder for tomorrow's <strong>${disc}</strong> lesson.</p>
     ${lessonInfo(lesson)}
-    <h3 style="font-size:15px;margin-top:24px">Students (${students.length})</h3>
-    <table><tr><th>Name</th><th>Phone</th><th>Email</th></tr>${studentRows}</table>
+    <h3 style="font-size:15px;margin-top:24px">Students (${totalStudents} total)</h3>
+    <table><tr><th>Name</th><th>Phone</th><th>Email</th><th>Students</th></tr>${studentRows}</table>
     <p>See you on the mountain!</p>`
   )
   await send(instructor.email, subject, html)
@@ -233,19 +234,22 @@ export async function sendInstructorReminder(
 export async function sendStudentReminder(
   customer: Customer,
   lesson: Lesson,
-  instructor: Instructor
+  instructor: Instructor | null
 ): Promise<void> {
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Tomorrow's lesson reminder`
+  const instructorSection = instructor
+    ? `<div class="info">
+        <strong>Your instructor:</strong> ${instructor.name}<br>
+        <strong>Instructor phone:</strong> ${instructor.phone}
+      </div>`
+    : `<div class="info">Your instructor will be confirmed shortly — contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a> with any questions.</div>`
   const html = baseTemplate(
     `${disc} Lesson — Reminder`,
     `<p>Hi ${customer.name},</p>
     <p>This is your reminder for tomorrow's <strong>${disc}</strong> lesson!</p>
     ${lessonInfo(lesson)}
-    <div class="info">
-      <strong>Your instructor:</strong> ${instructor.name}<br>
-      <strong>Instructor phone:</strong> ${instructor.phone}
-    </div>
+    ${instructorSection}
     <p>Please arrive a few minutes early and meet at the Mountain Clock. See you there!</p>`
   )
   await send(customer.email, subject, html)

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { sendStudentReminder, sendInstructorReminder, sendAdminNoInstructorAlert } from '@/lib/email'
-import { sendStudentReminderSMS, sendInstructorReminderSMS } from '@/lib/sms'
 import type { Customer, Instructor, Lesson } from '@/types'
 
-export async function POST(request: NextRequest) {
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -12,12 +13,12 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerSupabase()
 
-  // Tomorrow's date in UTC (cron fires at 06:00 UTC = 18:00 NZST)
+  // Tomorrow's date in NZ timezone (cron fires at 06:00 UTC = 18:00 NZST)
   const now = new Date()
   const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
   const tomorrowStr = tomorrow.toISOString().slice(0, 10)
 
-  // Only process Saturday and Sunday lessons (ski season)
+  // Only process Saturday and Sunday lessons (ski season weekends)
   const tomorrowDay = tomorrow.getUTCDay() // 0 = Sunday, 6 = Saturday
   if (tomorrowDay !== 0 && tomorrowDay !== 6) {
     return NextResponse.json({ message: 'No weekend lessons tomorrow, nothing to do' })
@@ -40,30 +41,34 @@ export async function POST(request: NextRequest) {
 
   const results: Record<string, string> = {}
 
-  for (const lesson of (lessons ?? []).filter((l) => l.instructor_id)) {
-    const instructor = lesson.instructor as Instructor
-    if (!instructor) continue
+  for (const lesson of (lessons ?? [])) {
+    const instructor = lesson.instructor as Instructor | null
 
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('customer:customers(*)')
+      .select('quantity, customer:customers(*)')
       .eq('lesson_id', lesson.id)
       .eq('status', 'confirmed')
 
-    const students = (bookings ?? []).map((b) => b.customer as unknown as Customer)
-    if (students.length === 0) continue
+    const studentEntries = (bookings ?? []).map((b) => ({
+      customer: b.customer as unknown as Customer,
+      quantity: (b.quantity as number) ?? 1,
+    }))
 
-    // Email the instructor
-    await sendInstructorReminder(instructor, lesson as Lesson, students)
-    await sendInstructorReminderSMS(instructor, lesson as Lesson, students)
+    if (studentEntries.length === 0) continue
 
-    // Email each student
-    for (const student of students) {
-      await sendStudentReminder(student, lesson as Lesson, instructor)
-      await sendStudentReminderSMS(student, lesson as Lesson, instructor)
+    // Email the instructor (if assigned)
+    if (instructor) {
+      await sendInstructorReminder(instructor, lesson as Lesson, studentEntries)
     }
 
-    results[lesson.id] = `${instructor.name} + ${students.length} student(s) notified`
+    // Email each student
+    for (const entry of studentEntries) {
+      await sendStudentReminder(entry.customer, lesson as Lesson, instructor)
+    }
+
+    const totalStudents = studentEntries.reduce((sum, e) => sum + e.quantity, 0)
+    results[lesson.id] = `${instructor?.name ?? 'no instructor'} + ${totalStudents} student(s) notified`
   }
 
   return NextResponse.json({ date: tomorrowStr, processed: results })
