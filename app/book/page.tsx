@@ -68,7 +68,12 @@ function BookingForm() {
   const [step, setStep] = useState<Step>(1)
   const [state, setState] = useState<BookingState>({
     ...INITIAL_STATE,
-    discipline: (searchParams.get('discipline') as Discipline) ?? null,
+    discipline: (() => {
+      const d = searchParams.get('discipline')?.toLowerCase()
+      if (d === 'ski' || d === 'skiing') return 'ski'
+      if (d === 'snowboard' || d === 'snowboarding') return 'snowboard'
+      return null
+    })(),
   })
   const [lessons, setLessons] = useState<AnnotatedLesson[]>([])
   const [loadingLessons, setLoadingLessons] = useState(false)

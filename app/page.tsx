@@ -64,6 +64,7 @@ export default function HomePage() {
               {[
                 {
                   name: 'Skiing',
+                  discipline: 'ski',
                   icon: '⛷️',
                   desc: 'Carve down groomed runs with our certified ski instructors in a group or private lesson.',
                   color: 'from-blue-900/70 to-blue-800/70',
@@ -71,6 +72,7 @@ export default function HomePage() {
                 },
                 {
                   name: 'Snowboarding',
+                  discipline: 'snowboard',
                   icon: '🏂',
                   desc: "Learn to ride with our dedicated snowboard coaches. Learn and improve your riding today!",
                   color: 'from-purple-900/70 to-purple-800/70',
@@ -89,7 +91,7 @@ export default function HomePage() {
                     <h3 className="text-2xl font-bold mb-3">{d.name}</h3>
                     <p className="text-blue-100 text-sm leading-relaxed mb-6">{d.desc}</p>
                     <Link
-                      href={`/book?discipline=${d.name.toLowerCase()}`}
+                      href={`/book?discipline=${d.discipline}`}
                       className="inline-block bg-white text-slate-900 font-semibold px-6 py-2 rounded-lg text-sm hover:bg-orange-50 transition-colors"
                     >
                       Book {d.name} →
