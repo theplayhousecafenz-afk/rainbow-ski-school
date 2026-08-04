@@ -8,14 +8,21 @@ type Discipline = 'ski' | 'snowboard'
 type Level = 'beginner' | 'intermediate' | 'advanced'
 type LessonType = 'group' | 'private'
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function getUpcomingWeekends(weeks: number): string[] {
   const dates: string[] = []
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  let d = new Date(today)
+  const d = new Date(today)
   while (dates.length < weeks * 2) {
     const day = d.getDay()
-    if (day === 6 || day === 0) dates.push(d.toISOString().slice(0, 10))
+    if (day === 6 || day === 0) dates.push(toLocalDateStr(d))
     d.setDate(d.getDate() + 1)
   }
   return dates
