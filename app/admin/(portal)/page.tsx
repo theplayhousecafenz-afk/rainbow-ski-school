@@ -41,7 +41,7 @@ export default async function AdminOverviewPage() {
   const atRisk = (lessons ?? []).filter((l) => {
     const cutoff = getBookingCutoff(new Date(l.date))
     const hoursToGo = (cutoff.getTime() - now.getTime()) / 3_600_000
-    return l.current_bookings === 1 && hoursToGo > 0 && hoursToGo < 48
+    return l.lesson_type === 'group' && l.current_bookings === 1 && hoursToGo > 0 && hoursToGo < 48
   })
 
   return (
