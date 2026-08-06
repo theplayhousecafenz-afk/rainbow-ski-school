@@ -1,20 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Instructor } from '@/types'
 
 export default function AssignInstructor({
   lessonId,
+  lessonDiscipline,
   currentInstructorId,
-  instructors,
 }: {
   lessonId: string
+  lessonDiscipline: string
   currentInstructorId: string | null
-  instructors: Instructor[]
 }) {
+  const [instructors, setInstructors] = useState<Instructor[]>([])
   const [selected, setSelected] = useState(currentInstructorId ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Fetch fresh every render — bypasses Next.js router cache
+  useEffect(() => {
+    fetch('/api/admin/instructors')
+      .then(r => r.json())
+      .then(d => {
+        const all: Instructor[] = d.instructors ?? []
+        setInstructors(all.filter(i => i.discipline === lessonDiscipline && i.active))
+      })
+  }, [lessonDiscipline])
 
   async function save() {
     setSaving(true)
