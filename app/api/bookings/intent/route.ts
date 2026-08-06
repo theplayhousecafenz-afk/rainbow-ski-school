@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   }
 
-  const availability = canBook(lesson as Lesson, new Date())
+  const availability = canBook(lesson as Lesson, new Date(), qty)
   if (!availability.available) {
     return NextResponse.json({ error: availability.reason }, { status: 409 })
   }

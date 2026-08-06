@@ -382,6 +382,26 @@ export async function sendInstructorLessonConfirmed(
   await send(instructor.email, subject, html)
 }
 
+// 13. Lesson cancelled by admin — notify each confirmed student
+export async function sendLessonCancelledByAdmin(
+  customer: Customer,
+  lesson: Lesson,
+  booking: Booking
+): Promise<void> {
+  const disc = lesson.discipline.toUpperCase()
+  const subject = `[${disc}] Lesson cancelled — full refund issued`
+  const html = baseTemplate(
+    `${disc} Lesson Cancelled`,
+    `<p>Hi ${customer.name},</p>
+    <p>We're sorry to let you know that your <strong>${disc}</strong> lesson on ${formatNZDate(lesson.date)} has been cancelled by Rainbow Ski School.</p>
+    <p>A <strong>full refund of $${(booking.amount_paid / 100).toFixed(2)} NZD</strong> has been issued to your original payment method. Please allow 5–10 business days for it to appear.</p>
+    ${lessonInfo(lesson)}
+    <p>We're sorry for the inconvenience. If you'd like to book another lesson please visit our website or contact us at <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a>.</p>
+    <a class="btn" href="${BASE_URL}/book">Browse Other Lessons</a>`
+  )
+  await send(customer.email, subject, html)
+}
+
 // Admin notification — lesson cancelled (1 booking at cutoff, refund issued)
 export async function sendAdminLessonCancelledOneBooking(
   lesson: Lesson,

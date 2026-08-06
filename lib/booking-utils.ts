@@ -12,11 +12,13 @@ export function getBookingCutoff(date: Date): Date {
   return new Date(Date.UTC(y, m, d - 2, 11, 59, 59))
 }
 
-export function canBook(lesson: Lesson, now: Date): BookingAvailability {
+export function canBook(lesson: Lesson, now: Date, qty = 1): BookingAvailability {
   const cutoff = getBookingCutoff(new Date(lesson.date))
   const isBefore = now < cutoff
-  const confirmed = lesson.current_bookings >= 2
-  const full = lesson.current_bookings >= lesson.max_students
+  const minStudents = lesson.min_students ?? 2
+  const confirmed = lesson.current_bookings >= minStudents
+  // Block if adding qty would exceed max capacity
+  const full = lesson.current_bookings + qty > lesson.max_students
 
   if (lesson.on_hold) return { available: false, reason: 'on_hold' }
   if (full) return { available: false, reason: 'full' }

@@ -5,6 +5,8 @@ import { formatNZDate, formatTime } from '@/lib/booking-utils'
 import type { Lesson, Booking, Customer, Availability, Instructor } from '@/types'
 import AssignInstructor from './assign-instructor'
 import HoldButton from './hold-button'
+import CancelBookingButton from './cancel-booking-button'
+import CancelLessonButton from './cancel-lesson-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -88,6 +90,13 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
       {/* Hold */}
       <HoldButton lessonId={l.id} initialOnHold={l.on_hold ?? false} />
 
+      {/* Cancel lesson */}
+      <CancelLessonButton
+        lessonId={l.id}
+        lessonStatus={l.status}
+        confirmedCount={bkgs.filter(b => b.status === 'confirmed').length}
+      />
+
       {/* Assign instructor */}
       <AssignInstructor
         lessonId={l.id}
@@ -110,22 +119,30 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
                 <th className="px-5 py-3 font-semibold">Email</th>
                 <th className="px-5 py-3 font-semibold">Phone</th>
                 <th className="px-5 py-3 font-semibold">Type</th>
+                <th className="px-5 py-3 font-semibold">Qty</th>
                 <th className="px-5 py-3 font-semibold">Paid</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
+                <th className="px-5 py-3 font-semibold"></th>
               </tr>
             </thead>
             <tbody>
               {bkgs.map((b) => (
-                <tr key={b.id} className="border-t border-slate-100">
+                <tr key={b.id} className={`border-t border-slate-100 ${b.status === 'cancelled' ? 'opacity-40' : ''}`}>
                   <td className="px-5 py-3 font-medium">{b.customer.name}</td>
                   <td className="px-5 py-3 text-slate-500">{b.customer.email}</td>
                   <td className="px-5 py-3 text-slate-500">{b.customer.phone}</td>
                   <td className="px-5 py-3 capitalize">{b.customer_type.replace('_', ' / ')}</td>
+                  <td className="px-5 py-3 text-slate-600">{b.quantity ?? 1}</td>
                   <td className="px-5 py-3">${(b.amount_paid / 100).toFixed(2)}</td>
                   <td className="px-5 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[b.status]}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[b.status] ?? 'bg-slate-100 text-slate-500'}`}>
                       {b.status}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    {b.status !== 'cancelled' && (
+                      <CancelBookingButton bookingId={b.id} status={b.status} />
+                    )}
                   </td>
                 </tr>
               ))}

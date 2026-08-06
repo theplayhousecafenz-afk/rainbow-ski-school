@@ -59,6 +59,7 @@ export interface Booking {
   stripe_payment_intent_id: string
   stripe_refund_id: string | null
   status: BookingStatus
+  quantity: number
   created_at: string
   lesson?: Lesson
   customer?: Customer
