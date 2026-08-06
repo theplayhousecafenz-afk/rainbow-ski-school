@@ -12,6 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: 'bg-blue-200 text-blue-900',
   cancelled: 'bg-red-100 text-red-700',
   closed: 'bg-slate-100 text-slate-500',
+  on_hold: 'bg-orange-100 text-orange-700',
 }
 
 export default async function AdminOverviewPage() {
@@ -108,8 +109,8 @@ export default async function AdminOverviewPage() {
                             {lesson.instructor ? ` · ${lesson.instructor.name}` : ' · No instructor'}
                           </p>
                         </div>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLORS[lesson.status]}`}>
-                          {lesson.status.replace('_', ' ')}
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lesson.on_hold ? STATUS_COLORS.on_hold : STATUS_COLORS[lesson.status]}`}>
+                          {lesson.on_hold ? 'on hold' : lesson.status.replace('_', ' ')}
                         </span>
                       </Link>
                     ))}

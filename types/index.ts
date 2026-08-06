@@ -35,6 +35,7 @@ export interface Lesson {
   current_bookings: number
   instructor_id: string | null
   instructor_confirmed: boolean
+  on_hold: boolean
   status: LessonStatus
   created_at: string
   instructor?: Instructor | null
@@ -86,4 +87,4 @@ export interface Enquiry {
 
 export type BookingAvailability =
   | { available: true; reason: 'open' | 'late_booking' }
-  | { available: false; reason: 'full' | 'cutoff_passed' }
+  | { available: false; reason: 'full' | 'cutoff_passed' | 'on_hold' }

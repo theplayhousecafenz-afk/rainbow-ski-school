@@ -57,19 +57,23 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { id, instructor_id } = await request.json()
+  const { id, instructor_id, on_hold } = await request.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = createServerSupabase()
+  const updates: Record<string, unknown> = {}
+  if (instructor_id !== undefined) updates.instructor_id = instructor_id ?? null
+  if (on_hold !== undefined) updates.on_hold = on_hold
+
   const { error } = await supabase
     .from('lessons')
-    .update({ instructor_id: instructor_id ?? null })
+    .update(updates)
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Email the newly assigned instructor (if one was set, not cleared)
-  if (instructor_id) {
+  if (instructor_id !== undefined && instructor_id) {
     const [{ data: instructor }, { data: lesson }] = await Promise.all([
       supabase.from('instructors').select('*').eq('id', instructor_id).single(),
       supabase.from('lessons').select('*').eq('id', id).single(),

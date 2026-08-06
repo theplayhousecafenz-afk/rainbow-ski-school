@@ -260,6 +260,9 @@ function BookingForm() {
                       {disabled && avail.reason === 'cutoff_passed' && (
                         <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Closed</span>
                       )}
+                      {disabled && avail.reason === 'on_hold' && (
+                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Temporarily unavailable</span>
+                      )}
                     </div>
                   </div>
                 </button>

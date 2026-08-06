@@ -4,6 +4,7 @@ import { createServerSupabase } from '@/lib/supabase'
 import { formatNZDate, formatTime } from '@/lib/booking-utils'
 import type { Lesson, Booking, Customer, Availability, Instructor } from '@/types'
 import AssignInstructor from './assign-instructor'
+import HoldButton from './hold-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,6 +84,9 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
           {l.instructor && <Info label="Instructor" value={`${l.instructor.name} (${l.instructor.phone})`} />}
         </div>
       </div>
+
+      {/* Hold */}
+      <HoldButton lessonId={l.id} initialOnHold={l.on_hold ?? false} />
 
       {/* Assign instructor */}
       <AssignInstructor

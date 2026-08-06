@@ -18,6 +18,7 @@ export function canBook(lesson: Lesson, now: Date): BookingAvailability {
   const confirmed = lesson.current_bookings >= 2
   const full = lesson.current_bookings >= lesson.max_students
 
+  if (lesson.on_hold) return { available: false, reason: 'on_hold' }
   if (full) return { available: false, reason: 'full' }
   if (isBefore) return { available: true, reason: 'open' }
   if (confirmed) return { available: true, reason: 'late_booking' }
