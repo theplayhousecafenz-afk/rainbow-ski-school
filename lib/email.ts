@@ -35,9 +35,15 @@ function baseTemplate(title: string, body: string): string {
 </div></body></html>`
 }
 
-async function send(to: string, subject: string, html: string) {
+async function send(to: string, subject: string, html: string, cc?: string) {
   try {
-    await getResend().emails.send({ from: FROM, to, subject, html })
+    await getResend().emails.send({
+      from: FROM,
+      to,
+      subject,
+      html,
+      ...(cc ? { cc } : {}),
+    })
   } catch (err) {
     console.error('[Email] Failed to send to', to, err)
   }
@@ -414,7 +420,7 @@ export async function sendDaySheetToInstructor(
     ${lessonBlocks}
     <p style="margin-top:16px;font-size:13px;color:#64748b">See you on the mountain! Contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a> with any questions.</p>`
   )
-  await send(instructor.email, subject, html)
+  await send(instructor.email, subject, html, ADMIN_EMAIL)
 }
 
 // 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)
@@ -456,7 +462,13 @@ export async function sendMasterDaySheetToAdmin(
     `Master Day Sheet — ${dateStr}`,
     `${greeting}${blocks}`
   )
-  await send(recipient ? recipient.email : ADMIN_EMAIL, subject, html)
+  // If sending to an instructor, CC admin so snowsports@ always gets a copy
+  await send(
+    recipient ? recipient.email : ADMIN_EMAIL,
+    subject,
+    html,
+    recipient ? ADMIN_EMAIL : undefined
+  )
 }
 
 // 14. Roster email — send student contact list to instructor on demand
@@ -488,7 +500,7 @@ export async function sendRosterToInstructor(
     </table>
     <p style="margin-top:16px;font-size:13px;color:#64748b">See you on the mountain!</p>`
   )
-  await send(instructor.email, subject, html)
+  await send(instructor.email, subject, html, ADMIN_EMAIL)
 }
 
 // 14. Lesson cancelled by admin — notify each confirmed student
