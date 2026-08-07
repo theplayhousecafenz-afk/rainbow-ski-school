@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-type SendType = 'personal' | 'master'
+type SendType = 'personal' | 'master' | 'self'
 const storageKey = (date: string, type: SendType) => `daysheet_${type}_sent_${date}`
 
 export default function DaySheetActions({
@@ -14,23 +14,26 @@ export default function DaySheetActions({
   hasLessons: boolean
   assignedInstructors: string[]
 }) {
+  const [notes, setNotes] = useState('')
   const [sending, setSending] = useState<SendType | null>(null)
-  const [errors, setErrors] = useState<Record<SendType, string>>({ personal: '', master: '' })
+  const [errors, setErrors] = useState<Record<SendType, string>>({ personal: '', master: '', self: '' })
   const [lastSent, setLastSent] = useState<Record<SendType, { at: string; instructors: string[] } | null>>({
     personal: null,
     master: null,
+    self: null,
   })
 
   useEffect(() => {
     setSending(null)
-    setErrors({ personal: '', master: '' })
+    setNotes('')
+    setErrors({ personal: '', master: '', self: '' })
     const load = (type: SendType) => {
       try {
         const stored = localStorage.getItem(storageKey(date, type))
         return stored ? JSON.parse(stored) : null
       } catch { return null }
     }
-    setLastSent({ personal: load('personal'), master: load('master') })
+    setLastSent({ personal: load('personal'), master: load('master'), self: load('self') })
   }, [date])
 
   async function send(type: SendType) {
@@ -39,7 +42,12 @@ export default function DaySheetActions({
     const res = await fetch('/api/admin/day-sheet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, sendMasterToAll: type === 'master' }),
+      body: JSON.stringify({
+        date,
+        sendMasterToAll: type === 'master',
+        selfOnly: type === 'self',
+        notes,
+      }),
     })
     const data = await res.json()
     setSending(null)
@@ -68,6 +76,15 @@ export default function DaySheetActions({
 
   return (
     <div className="flex flex-col items-end gap-2">
+      {/* Notes field */}
+      <textarea
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+        placeholder="Add notes for today (optional)…"
+        rows={2}
+        className="w-72 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-alpine-600 resize-none"
+      />
+
       <div className="flex items-center gap-2">
         {/* Print */}
         <button
@@ -76,6 +93,23 @@ export default function DaySheetActions({
         >
           🖨 Print
         </button>
+
+        {/* Send to Me — always available if there are lessons */}
+        {hasLessons && (
+          <button
+            onClick={() => send('self')}
+            disabled={sending !== null}
+            title="Send master sheet + notes to snowsports@skirainbow.co.nz only"
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+              errors.self ? 'bg-red-100 text-red-700'
+              : 'bg-slate-600 text-white hover:bg-slate-700'
+            }`}
+          >
+            {sending === 'self' ? 'Sending…'
+              : errors.self ? `✗ ${errors.self}`
+              : '📩 Send to Me'}
+          </button>
+        )}
 
         {canSend ? (
           <>
@@ -118,6 +152,13 @@ export default function DaySheetActions({
 
       {/* Last-sent warnings */}
       <div className="flex flex-col items-end gap-0.5">
+        {lastSent.self && (
+          <p className="text-xs text-amber-600 font-medium text-right">
+            ⚠️ Sent to me {new Date(lastSent.self.at).toLocaleString('en-NZ', {
+              timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+            })}
+          </p>
+        )}
         {lastSent.personal && <SentLabel type="personal" />}
         {lastSent.master && (
           <p className="text-xs text-amber-600 font-medium text-right">

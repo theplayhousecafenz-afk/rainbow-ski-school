@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
-import { sendDaySheetToInstructor, sendMasterDaySheetToAdmin } from '@/lib/email'
+import { sendDaySheetToInstructor, sendMasterDaySheetToAdmin, sendDaySheetToSelf } from '@/lib/email'
 import type { Customer, Instructor, Lesson } from '@/types'
 
 export async function POST(request: NextRequest) {
-  const { date, sendMasterToAll = false } = await request.json()
+  const { date, sendMasterToAll = false, selfOnly = false, notes = '' } = await request.json()
   if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 })
 
   const supabase = createServerSupabase()
@@ -58,6 +58,12 @@ export async function POST(request: NextRequest) {
   }
 
   const instructorsSent: string[] = []
+
+  if (selfOnly) {
+    // Send master + notes to admin only
+    await sendDaySheetToSelf(date, lessonGroups, notes)
+    return NextResponse.json({ success: true, instructorsSent: [], lessonCount: lessons.length })
+  }
 
   if (sendMasterToAll) {
     // Send the full master sheet to every assigned instructor + admin

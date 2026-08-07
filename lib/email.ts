@@ -423,6 +423,53 @@ export async function sendDaySheetToInstructor(
   await send(instructor.email, subject, html, ADMIN_EMAIL)
 }
 
+// 13aa. Day sheet — send to self (admin only) with optional notes
+export async function sendDaySheetToSelf(
+  date: string,
+  lessonGroups: Array<{
+    lesson: Lesson
+    instructor: Instructor | null
+    students: Array<{ customer: Customer; quantity: number }>
+  }>,
+  notes = ''
+): Promise<void> {
+  const dateStr = formatNZDate(date)
+  const subject = `Day Sheet — ${dateStr}`
+
+  const notesBlock = notes.trim()
+    ? `<div class="info" style="background:#fefce8;border-left-color:#ca8a04">
+        <strong style="color:#92400e">📝 Notes for today:</strong><br>
+        <span style="white-space:pre-wrap;color:#1e293b">${notes.trim()}</span>
+      </div>`
+    : ''
+
+  const blocks = lessonGroups.map(({ lesson, instructor, students }) => {
+    const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+    const rows = students
+      .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td>${s.customer.email}</td><td style="text-align:center">${s.quantity}</td></tr>`)
+      .join('')
+    const instrLine = instructor
+      ? `<p style="margin:4px 0;font-size:14px"><strong>Instructor:</strong> ${instructor.name} · ${instructor.phone}</p>`
+      : `<p style="margin:4px 0;font-size:14px;color:#dc2626"><strong>⚠️ No instructor assigned</strong></p>`
+    return `
+      <div style="margin-bottom:28px">
+        <h3 style="font-size:15px;margin:0 0 6px;color:#172554">${lesson.discipline.toUpperCase()} · ${formatTime(lesson.start_time)} · ${lesson.lesson_type} · ${lesson.level}</h3>
+        ${instrLine}
+        ${totalStudents > 0
+          ? `<table style="margin-top:8px"><tr><th>Name</th><th>Phone</th><th>Email</th><th>Qty</th></tr>${rows}</table>`
+          : `<p style="font-size:13px;color:#94a3b8;margin:4px 0">No confirmed students.</p>`}
+      </div>`
+  }).join('<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">')
+
+  const html = baseTemplate(
+    `Day Sheet — ${dateStr}`,
+    `${notesBlock}
+    <p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
+    ${blocks}`
+  )
+  await send(ADMIN_EMAIL, subject, html)
+}
+
 // 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)
 export async function sendMasterDaySheetToAdmin(
   date: string,
