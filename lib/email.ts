@@ -5,6 +5,8 @@ import { formatNZDate, formatTime } from './booking-utils'
 const getResend = () => new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
 const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'snowsports@skirainbow.co.nz'
+const ADMIN_EMAIL_2 = 'theplayhousecafenz@gmail.com'
+const ADMIN_EMAILS = [ADMIN_EMAIL, ADMIN_EMAIL_2]
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
 
 function baseTemplate(title: string, body: string): string {
@@ -35,7 +37,7 @@ function baseTemplate(title: string, body: string): string {
 </div></body></html>`
 }
 
-async function send(to: string, subject: string, html: string, cc?: string, throwOnError = false) {
+async function send(to: string | string[], subject: string, html: string, cc?: string, throwOnError = false) {
   try {
     const result = await getResend().emails.send({
       from: FROM,
@@ -422,7 +424,7 @@ export async function sendDaySheetToInstructor(
     ${lessonBlocks}
     <p style="margin-top:16px;font-size:13px;color:#64748b">See you on the mountain! Contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a> with any questions.</p>`
   )
-  await send(instructor.email, subject, html, ADMIN_EMAIL)
+  await send(instructor.email, subject, html, ADMIN_EMAIL, true)
 }
 
 // 13aa. Day sheet — send to self (admin only) with optional notes
@@ -469,7 +471,7 @@ export async function sendDaySheetToSelf(
     <p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
     ${blocks}`
   )
-  await send(ADMIN_EMAIL, subject, html, undefined, true)
+  await send(ADMIN_EMAILS, subject, html, undefined, true)
 }
 
 // 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)
@@ -511,12 +513,13 @@ export async function sendMasterDaySheetToAdmin(
     `Master Day Sheet — ${dateStr}`,
     `${greeting}${blocks}`
   )
-  // If sending to an instructor, CC admin so snowsports@ always gets a copy
+  // If sending to an instructor, CC both admin emails; if sending to admin, send to both directly
   await send(
-    recipient ? recipient.email : ADMIN_EMAIL,
+    recipient ? recipient.email : ADMIN_EMAILS,
     subject,
     html,
-    recipient ? ADMIN_EMAIL : undefined
+    recipient ? ADMIN_EMAIL : undefined,
+    true
   )
 }
 

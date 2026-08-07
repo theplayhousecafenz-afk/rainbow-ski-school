@@ -69,22 +69,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, instructorsSent: [], lessonCount: lessons.length })
   }
 
-  if (sendMasterToAll) {
-    // Send the full master sheet to every assigned instructor + admin
-    for (const { instructor } of Object.values(byInstructor)) {
-      await sendMasterDaySheetToAdmin(date, lessonGroups, instructor)
-      instructorsSent.push(instructor.name)
+  try {
+    if (sendMasterToAll) {
+      // Send full master sheet to every assigned instructor (CC admin) + admin directly
+      for (const { instructor } of Object.values(byInstructor)) {
+        await sendMasterDaySheetToAdmin(date, lessonGroups, instructor)
+        instructorsSent.push(instructor.name)
+      }
+      await sendMasterDaySheetToAdmin(date, lessonGroups, null)
+    } else {
+      // Send each instructor only their own lesson(s) (CC admin) + admin master copy
+      for (const { instructor, lessons: instrLessons } of Object.values(byInstructor)) {
+        await sendDaySheetToInstructor(instructor, instrLessons)
+        instructorsSent.push(instructor.name)
+      }
+      await sendMasterDaySheetToAdmin(date, lessonGroups, null)
     }
-    // Admin copy
-    await sendMasterDaySheetToAdmin(date, lessonGroups, null)
-  } else {
-    // Send each instructor only their own lesson(s)
-    for (const { instructor, lessons: instrLessons } of Object.values(byInstructor)) {
-      await sendDaySheetToInstructor(instructor, instrLessons)
-      instructorsSent.push(instructor.name)
-    }
-    // Admin master copy
-    await sendMasterDaySheetToAdmin(date, lessonGroups, null)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Email send failed'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 
   return NextResponse.json({
