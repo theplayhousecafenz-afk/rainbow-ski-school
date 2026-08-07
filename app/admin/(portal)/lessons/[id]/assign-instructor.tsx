@@ -15,33 +15,49 @@ export default function AssignInstructor({
 }) {
   const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>([])
+  const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(currentInstructorId ?? '')
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
 
-  // Fetch fresh every render — bypasses Next.js router cache
+  // Fetch fresh every mount — bypasses Next.js router cache
   useEffect(() => {
+    setLoading(true)
     fetch('/api/admin/instructors')
       .then(r => r.json())
       .then(d => {
         const all: Instructor[] = d.instructors ?? []
         setInstructors(all.filter(i => i.discipline === lessonDiscipline && i.active))
+        setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [lessonDiscipline])
 
   async function save() {
     setSaving(true)
-    setSaved(false)
-    await fetch('/api/admin/lessons', {
+    setStatus('idle')
+    setErrorMsg('')
+
+    const res = await fetch('/api/admin/lessons', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lessonId, instructor_id: selected || null }),
     })
+
     setSaving(false)
-    setSaved(true)
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setStatus('error')
+      setErrorMsg(data.error ?? `Server error (${res.status})`)
+      return
+    }
+
+    setStatus('saved')
     // Bust the router cache so roster and lesson detail reflect the new instructor
     router.refresh()
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setStatus('idle'), 3000)
   }
 
   return (
@@ -49,30 +65,50 @@ export default function AssignInstructor({
       <h2 className="font-semibold text-slate-700 mb-4">Assign Instructor</h2>
       <div className="flex gap-3 items-end">
         <div className="flex-1">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Instructor</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">
+            Instructor
+            {loading && <span className="ml-2 text-slate-400 font-normal">Loading…</span>}
+          </label>
           <select
             value={selected}
-            onChange={e => setSelected(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alpine-600"
+            onChange={e => { setSelected(e.target.value); setStatus('idle') }}
+            disabled={loading}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alpine-600 disabled:opacity-50"
           >
             <option value="">— No instructor assigned —</option>
             {instructors.map(i => (
               <option key={i.id} value={i.id}>
-                {i.name} ({i.discipline})
+                {i.name}
               </option>
             ))}
           </select>
+
+          {!loading && instructors.length === 0 && (
+            <p className="text-xs text-orange-600 mt-1">
+              No active {lessonDiscipline} instructors found. Add one in the Instructors page.
+            </p>
+          )}
         </div>
+
         <button
           onClick={save}
-          disabled={saving}
-          className="bg-alpine-900 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-alpine-700 disabled:opacity-60 transition-colors"
+          disabled={saving || loading}
+          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+            status === 'error'
+              ? 'bg-red-600 text-white'
+              : 'bg-alpine-900 text-white hover:bg-alpine-700'
+          }`}
         >
-          {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
+          {saving ? 'Saving…' : status === 'saved' ? '✓ Saved' : status === 'error' ? '✗ Failed' : 'Save'}
         </button>
       </div>
+
+      {status === 'error' && errorMsg && (
+        <p className="text-xs text-red-600 mt-2">Error: {errorMsg}</p>
+      )}
+
       <p className="text-xs text-slate-400 mt-2">
-        Assigning an instructor here reserves them for this lesson. They won&apos;t receive an email until the lesson reaches minimum bookings.
+        The instructor will receive an email immediately when assigned.
       </p>
     </div>
   )
