@@ -417,14 +417,15 @@ export async function sendDaySheetToInstructor(
   await send(instructor.email, subject, html)
 }
 
-// 13a. Day sheet — send admin the full master rundown for the day
+// 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)
 export async function sendMasterDaySheetToAdmin(
   date: string,
   lessonGroups: Array<{
     lesson: Lesson
     instructor: Instructor | null
     students: Array<{ customer: Customer; quantity: number }>
-  }>
+  }>,
+  recipient: Instructor | null = null  // null = send to admin email
 ): Promise<void> {
   const dateStr = formatNZDate(date)
   const subject = `Master Day Sheet — ${dateStr}`
@@ -447,12 +448,15 @@ export async function sendMasterDaySheetToAdmin(
       </div>`
   }).join('<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">')
 
+  const greeting = recipient
+    ? `<p>Hi ${recipient.name},</p><p>Here is the full master day sheet for <strong>${dateStr}</strong>.</p>`
+    : `<p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>`
+
   const html = baseTemplate(
     `Master Day Sheet — ${dateStr}`,
-    `<p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
-    ${blocks}`
+    `${greeting}${blocks}`
   )
-  await send(ADMIN_EMAIL, subject, html)
+  await send(recipient ? recipient.email : ADMIN_EMAIL, subject, html)
 }
 
 // 14. Roster email — send student contact list to instructor on demand

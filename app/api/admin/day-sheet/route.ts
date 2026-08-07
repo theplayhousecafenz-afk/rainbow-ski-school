@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { sendDaySheetToInstructor, sendMasterDaySheetToAdmin } from '@/lib/email'
-import type { Booking, Customer, Instructor, Lesson } from '@/types'
+import type { Customer, Instructor, Lesson } from '@/types'
 
 export async function POST(request: NextRequest) {
-  const { date } = await request.json()
+  const { date, sendMasterToAll = false } = await request.json()
   if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 })
 
   const supabase = createServerSupabase()
@@ -57,15 +57,25 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Send to each instructor
   const instructorsSent: string[] = []
-  for (const { instructor, lessons: instrLessons } of Object.values(byInstructor)) {
-    await sendDaySheetToInstructor(instructor, instrLessons)
-    instructorsSent.push(instructor.name)
-  }
 
-  // Send master copy to admin
-  await sendMasterDaySheetToAdmin(date, lessonGroups)
+  if (sendMasterToAll) {
+    // Send the full master sheet to every assigned instructor + admin
+    for (const { instructor } of Object.values(byInstructor)) {
+      await sendMasterDaySheetToAdmin(date, lessonGroups, instructor)
+      instructorsSent.push(instructor.name)
+    }
+    // Admin copy
+    await sendMasterDaySheetToAdmin(date, lessonGroups, null)
+  } else {
+    // Send each instructor only their own lesson(s)
+    for (const { instructor, lessons: instrLessons } of Object.values(byInstructor)) {
+      await sendDaySheetToInstructor(instructor, instrLessons)
+      instructorsSent.push(instructor.name)
+    }
+    // Admin master copy
+    await sendMasterDaySheetToAdmin(date, lessonGroups, null)
+  }
 
   return NextResponse.json({
     success: true,
