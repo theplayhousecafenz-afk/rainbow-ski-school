@@ -471,7 +471,8 @@ export async function sendDaySheetToSelf(
     <p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
     ${blocks}`
   )
-  await send(ADMIN_EMAILS, subject, html, undefined, true)
+  // Send to Gmail only until skirainbow.co.nz domain is verified in Resend
+  await send(ADMIN_EMAIL_2, subject, html, undefined, true)
 }
 
 // 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)
