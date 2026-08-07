@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+const storageKey = (lessonId: string) => `roster_sent_${lessonId}`
 
 export default function RosterActions({
   lessonId,
@@ -15,6 +17,15 @@ export default function RosterActions({
 }) {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [lastSent, setLastSent] = useState<{ at: string; to: string } | null>(null)
+
+  // Load last-sent info from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey(lessonId))
+      if (stored) setLastSent(JSON.parse(stored))
+    } catch {}
+  }, [lessonId])
 
   async function sendEmail() {
     setEmailStatus('sending')
@@ -30,42 +41,61 @@ export default function RosterActions({
       setEmailStatus('error')
     } else {
       setEmailStatus('sent')
+      const record = { at: new Date().toISOString(), to: instructorName ?? '' }
+      setLastSent(record)
+      try { localStorage.setItem(storageKey(lessonId), JSON.stringify(record)) } catch {}
     }
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      {/* Email button */}
-      {hasInstructor && hasStudents ? (
-        <button
-          onClick={sendEmail}
-          disabled={emailStatus === 'sending' || emailStatus === 'sent'}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
-            emailStatus === 'sent'
-              ? 'bg-green-100 text-green-700'
-              : emailStatus === 'error'
-              ? 'bg-red-100 text-red-700'
-              : 'bg-alpine-900 text-white hover:bg-alpine-700'
-          }`}
-        >
-          {emailStatus === 'sending' ? 'Sending…'
-            : emailStatus === 'sent' ? `✓ Sent to ${instructorName}`
-            : emailStatus === 'error' ? `✗ ${errorMsg}`
-            : `Email to ${instructorName}`}
-        </button>
-      ) : !hasInstructor ? (
-        <span className="text-xs text-slate-400 italic">Assign an instructor to email roster</span>
-      ) : (
-        <span className="text-xs text-slate-400 italic">No confirmed students yet</span>
-      )}
+  const lastSentLabel = lastSent
+    ? `Last sent to ${lastSent.to} on ${new Date(lastSent.at).toLocaleString('en-NZ', {
+        timeZone: 'Pacific/Auckland',
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+      })}`
+    : null
 
-      {/* Print button */}
-      <button
-        onClick={() => window.print()}
-        className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-      >
-        🖨 Print
-      </button>
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        {/* Email button */}
+        {hasInstructor && hasStudents ? (
+          <button
+            onClick={sendEmail}
+            disabled={emailStatus === 'sending'}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+              emailStatus === 'sent'
+                ? 'bg-green-100 text-green-700'
+                : emailStatus === 'error'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-alpine-900 text-white hover:bg-alpine-700'
+            }`}
+          >
+            {emailStatus === 'sending' ? 'Sending…'
+              : emailStatus === 'sent' ? `✓ Sent to ${instructorName}`
+              : emailStatus === 'error' ? `✗ ${errorMsg}`
+              : `Email to ${instructorName}`}
+          </button>
+        ) : !hasInstructor ? (
+          <span className="text-xs text-slate-400 italic">Assign an instructor to email roster</span>
+        ) : (
+          <span className="text-xs text-slate-400 italic">No confirmed students yet</span>
+        )}
+
+        {/* Print button */}
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          🖨 Print
+        </button>
+      </div>
+
+      {/* Last-sent reminder */}
+      {lastSentLabel && (
+        <p className="text-xs text-amber-600 font-medium">
+          ⚠️ {lastSentLabel}
+        </p>
+      )}
     </div>
   )
 }
