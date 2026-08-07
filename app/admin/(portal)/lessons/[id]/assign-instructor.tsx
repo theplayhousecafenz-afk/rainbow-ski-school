@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Instructor } from '@/types'
 
 export default function AssignInstructor({
@@ -12,6 +13,7 @@ export default function AssignInstructor({
   lessonDiscipline: string
   currentInstructorId: string | null
 }) {
+  const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [selected, setSelected] = useState(currentInstructorId ?? '')
   const [saving, setSaving] = useState(false)
@@ -37,6 +39,8 @@ export default function AssignInstructor({
     })
     setSaving(false)
     setSaved(true)
+    // Bust the router cache so roster and lesson detail reflect the new instructor
+    router.refresh()
     setTimeout(() => setSaved(false), 2000)
   }
 
