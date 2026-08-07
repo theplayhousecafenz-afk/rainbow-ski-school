@@ -59,6 +59,12 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
           ← Lessons
         </Link>
         <h1 className="text-2xl font-bold text-alpine-900">Lesson Detail</h1>
+        <Link
+          href={`/admin/lessons/${l.id}/roster`}
+          className="ml-auto text-sm bg-alpine-900 text-white px-4 py-2 rounded-lg hover:bg-alpine-700 transition-colors"
+        >
+          📋 Student Roster
+        </Link>
       </div>
 
       {/* Lesson info */}

@@ -382,7 +382,39 @@ export async function sendInstructorLessonConfirmed(
   await send(instructor.email, subject, html)
 }
 
-// 13. Lesson cancelled by admin — notify each confirmed student
+// 13. Roster email — send student contact list to instructor on demand
+export async function sendRosterToInstructor(
+  instructor: Instructor,
+  lesson: Lesson,
+  students: Array<{ customer: Customer; quantity: number }>
+): Promise<void> {
+  const disc = lesson.discipline.toUpperCase()
+  const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+  const subject = `[${disc}] Student roster — ${formatNZDate(lesson.date)} ${formatTime(lesson.start_time)}`
+  const rows = students
+    .map((s) => `<tr>
+      <td>${s.customer.name}</td>
+      <td>${s.customer.phone}</td>
+      <td>${s.customer.email}</td>
+      <td style="text-align:center">${s.quantity}</td>
+    </tr>`)
+    .join('')
+  const html = baseTemplate(
+    `${disc} Lesson — Student Roster`,
+    `<p>Hi ${instructor.name},</p>
+    <p>Here is the student contact list for your upcoming <strong>${disc}</strong> lesson.</p>
+    ${lessonInfo(lesson)}
+    <h3 style="font-size:15px;margin-top:24px">Students (${totalStudents} total)</h3>
+    <table>
+      <tr><th>Name</th><th>Phone</th><th>Email</th><th>Qty</th></tr>
+      ${rows}
+    </table>
+    <p style="margin-top:16px;font-size:13px;color:#64748b">See you on the mountain!</p>`
+  )
+  await send(instructor.email, subject, html)
+}
+
+// 14. Lesson cancelled by admin — notify each confirmed student
 export async function sendLessonCancelledByAdmin(
   customer: Customer,
   lesson: Lesson,
