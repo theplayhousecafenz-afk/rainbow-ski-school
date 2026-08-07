@@ -382,7 +382,80 @@ export async function sendInstructorLessonConfirmed(
   await send(instructor.email, subject, html)
 }
 
-// 13. Roster email — send student contact list to instructor on demand
+// 13. Day sheet — send instructor their lesson(s) for the day with student contacts
+export async function sendDaySheetToInstructor(
+  instructor: Instructor,
+  lessons: Array<{
+    lesson: Lesson
+    students: Array<{ customer: Customer; quantity: number }>
+  }>
+): Promise<void> {
+  const disc = instructor.discipline.toUpperCase()
+  const date = formatNZDate(lessons[0].lesson.date)
+  const subject = `[${disc}] Day sheet — ${date}`
+
+  const lessonBlocks = lessons.map(({ lesson, students }) => {
+    const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+    const rows = students
+      .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td>${s.customer.email}</td><td style="text-align:center">${s.quantity}</td></tr>`)
+      .join('')
+    return `
+      <div style="margin-bottom:24px">
+        ${lessonInfo(lesson)}
+        <h3 style="font-size:14px;margin:12px 0 6px">Students (${totalStudents} total)</h3>
+        <table><tr><th>Name</th><th>Phone</th><th>Email</th><th>Qty</th></tr>${rows}</table>
+      </div>`
+  }).join('<hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0">')
+
+  const html = baseTemplate(
+    `${disc} Day Sheet — ${date}`,
+    `<p>Hi ${instructor.name},</p>
+    <p>Here is your day sheet for <strong>${date}</strong>. Please find your lesson${lessons.length > 1 ? 's' : ''} and student contact details below.</p>
+    ${lessonBlocks}
+    <p style="margin-top:16px;font-size:13px;color:#64748b">See you on the mountain! Contact <a href="mailto:snowsports@skirainbow.co.nz">snowsports@skirainbow.co.nz</a> with any questions.</p>`
+  )
+  await send(instructor.email, subject, html)
+}
+
+// 13a. Day sheet — send admin the full master rundown for the day
+export async function sendMasterDaySheetToAdmin(
+  date: string,
+  lessonGroups: Array<{
+    lesson: Lesson
+    instructor: Instructor | null
+    students: Array<{ customer: Customer; quantity: number }>
+  }>
+): Promise<void> {
+  const dateStr = formatNZDate(date)
+  const subject = `Master Day Sheet — ${dateStr}`
+
+  const blocks = lessonGroups.map(({ lesson, instructor, students }) => {
+    const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
+    const rows = students
+      .map((s) => `<tr><td>${s.customer.name}</td><td>${s.customer.phone}</td><td>${s.customer.email}</td><td style="text-align:center">${s.quantity}</td></tr>`)
+      .join('')
+    const instrLine = instructor
+      ? `<p style="margin:4px 0;font-size:14px"><strong>Instructor:</strong> ${instructor.name} · ${instructor.phone}</p>`
+      : `<p style="margin:4px 0;font-size:14px;color:#dc2626"><strong>⚠️ No instructor assigned</strong></p>`
+    return `
+      <div style="margin-bottom:28px">
+        <h3 style="font-size:15px;margin:0 0 6px;color:#172554">${lesson.discipline.toUpperCase()} · ${formatTime(lesson.start_time)} · ${lesson.lesson_type} · ${lesson.level}</h3>
+        ${instrLine}
+        ${totalStudents > 0
+          ? `<table style="margin-top:8px"><tr><th>Name</th><th>Phone</th><th>Email</th><th>Qty</th></tr>${rows}</table>`
+          : `<p style="font-size:13px;color:#94a3b8;margin:4px 0">No confirmed students.</p>`}
+      </div>`
+  }).join('<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">')
+
+  const html = baseTemplate(
+    `Master Day Sheet — ${dateStr}`,
+    `<p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
+    ${blocks}`
+  )
+  await send(ADMIN_EMAIL, subject, html)
+}
+
+// 14. Roster email — send student contact list to instructor on demand
 export async function sendRosterToInstructor(
   instructor: Instructor,
   lesson: Lesson,
