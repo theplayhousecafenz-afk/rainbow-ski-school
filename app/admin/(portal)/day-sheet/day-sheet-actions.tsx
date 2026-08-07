@@ -94,6 +94,19 @@ export default function DaySheetActions({
           🖨 Print
         </button>
 
+        {/* Save as PDF */}
+        <button
+          onClick={() => {
+            const prev = document.title
+            document.title = `Rainbow-Ski-School-Day-Sheet-${date}`
+            window.print()
+            document.title = prev
+          }}
+          className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-colors"
+        >
+          💾 Save PDF
+        </button>
+
         {/* Send to Me — always available if there are lessons */}
         {hasLessons && (
           <button
