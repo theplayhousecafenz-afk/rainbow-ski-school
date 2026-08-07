@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { generatePdf } from '@/lib/generate-pdf'
 
 type SendType = 'personal' | 'master' | 'self'
+type PdfStatus = 'idle' | 'generating' | 'done' | 'error'
 const storageKey = (date: string, type: SendType) => `daysheet_${type}_sent_${date}`
 
 export default function DaySheetActions({
@@ -15,6 +17,7 @@ export default function DaySheetActions({
   assignedInstructors: string[]
 }) {
   const [notes, setNotes] = useState('')
+  const [pdfStatus, setPdfStatus] = useState<PdfStatus>('idle')
   const [sending, setSending] = useState<SendType | null>(null)
   const [errors, setErrors] = useState<Record<SendType, string>>({ personal: '', master: '', self: '' })
   const [lastSent, setLastSent] = useState<Record<SendType, { at: string; instructors: string[] } | null>>({
@@ -96,15 +99,28 @@ export default function DaySheetActions({
 
         {/* Save as PDF */}
         <button
-          onClick={() => {
-            const prev = document.title
-            document.title = `Rainbow-Ski-School-Day-Sheet-${date}`
-            window.print()
-            document.title = prev
+          disabled={pdfStatus === 'generating'}
+          onClick={async () => {
+            setPdfStatus('generating')
+            try {
+              await generatePdf('day-sheet-content', `Rainbow-Ski-School-Day-Sheet-${date}.pdf`)
+              setPdfStatus('done')
+              setTimeout(() => setPdfStatus('idle'), 3000)
+            } catch {
+              setPdfStatus('error')
+              setTimeout(() => setPdfStatus('idle'), 3000)
+            }
           }}
-          className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-colors"
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+            pdfStatus === 'done' ? 'border border-emerald-500 bg-emerald-50 text-emerald-700'
+            : pdfStatus === 'error' ? 'border border-red-400 bg-red-50 text-red-700'
+            : 'border border-emerald-400 text-emerald-700 hover:bg-emerald-50'
+          }`}
         >
-          💾 Save PDF
+          {pdfStatus === 'generating' ? '⏳ Generating…'
+            : pdfStatus === 'done' ? '✓ PDF Saved'
+            : pdfStatus === 'error' ? '✗ Failed'
+            : '💾 Save PDF'}
         </button>
 
         {/* Send to Me — always available if there are lessons */}

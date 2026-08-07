@@ -63,7 +63,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
       </div>
 
       {/* Roster card */}
-      <div className="print-page max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div id="roster-content" className="print-page max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header */}
         <div className="bg-[#172554] text-white px-8 py-6">
           <div className="flex items-start justify-between">

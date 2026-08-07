@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { generatePdf } from '@/lib/generate-pdf'
 
 const storageKey = (lessonId: string) => `roster_sent_${lessonId}`
 
@@ -16,6 +17,7 @@ export default function RosterActions({
   hasStudents: boolean
 }) {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [pdfStatus, setPdfStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [lastSent, setLastSent] = useState<{ at: string; to: string } | null>(null)
 
@@ -91,15 +93,28 @@ export default function RosterActions({
 
         {/* Save as PDF */}
         <button
-          onClick={() => {
-            const prev = document.title
-            document.title = `Rainbow-Ski-School-Roster-${lessonId}`
-            window.print()
-            document.title = prev
+          disabled={pdfStatus === 'generating'}
+          onClick={async () => {
+            setPdfStatus('generating')
+            try {
+              await generatePdf('roster-content', `Rainbow-Ski-School-Roster-${lessonId}.pdf`)
+              setPdfStatus('done')
+              setTimeout(() => setPdfStatus('idle'), 3000)
+            } catch {
+              setPdfStatus('error')
+              setTimeout(() => setPdfStatus('idle'), 3000)
+            }
           }}
-          className="px-4 py-2 rounded-lg text-sm font-semibold border border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-colors"
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
+            pdfStatus === 'done' ? 'border border-emerald-500 bg-emerald-50 text-emerald-700'
+            : pdfStatus === 'error' ? 'border border-red-400 bg-red-50 text-red-700'
+            : 'border border-emerald-400 text-emerald-700 hover:bg-emerald-50'
+          }`}
         >
-          💾 Save PDF
+          {pdfStatus === 'generating' ? '⏳ Generating…'
+            : pdfStatus === 'done' ? '✓ PDF Saved'
+            : pdfStatus === 'error' ? '✗ Failed'
+            : '💾 Save PDF'}
         </button>
       </div>
 

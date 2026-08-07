@@ -68,7 +68,7 @@ export default async function DaySheetPage({
         }
       `}</style>
 
-      <div className="max-w-4xl mx-auto">
+      <div id="day-sheet-content" className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="no-print flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-alpine-900">Day Sheet</h1>
