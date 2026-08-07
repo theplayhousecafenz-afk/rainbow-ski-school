@@ -35,17 +35,19 @@ function baseTemplate(title: string, body: string): string {
 </div></body></html>`
 }
 
-async function send(to: string, subject: string, html: string, cc?: string) {
+async function send(to: string, subject: string, html: string, cc?: string, throwOnError = false) {
   try {
-    await getResend().emails.send({
+    const result = await getResend().emails.send({
       from: FROM,
       to,
       subject,
       html,
       ...(cc ? { cc } : {}),
     })
+    if (result.error) throw new Error(result.error.message)
   } catch (err) {
     console.error('[Email] Failed to send to', to, err)
+    if (throwOnError) throw err
   }
 }
 
@@ -467,7 +469,7 @@ export async function sendDaySheetToSelf(
     <p>Full rundown for <strong>${dateStr}</strong> (${lessonGroups.length} lesson${lessonGroups.length !== 1 ? 's' : ''}).</p>
     ${blocks}`
   )
-  await send(ADMIN_EMAIL, subject, html)
+  await send(ADMIN_EMAIL, subject, html, undefined, true)
 }
 
 // 13a. Day sheet — send full master rundown for the day (to admin or a specific instructor)

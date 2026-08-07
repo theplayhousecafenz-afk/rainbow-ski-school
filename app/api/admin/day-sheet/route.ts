@@ -60,8 +60,12 @@ export async function POST(request: NextRequest) {
   const instructorsSent: string[] = []
 
   if (selfOnly) {
-    // Send master + notes to admin only
-    await sendDaySheetToSelf(date, lessonGroups, notes)
+    try {
+      await sendDaySheetToSelf(date, lessonGroups, notes)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Email send failed'
+      return NextResponse.json({ error: msg }, { status: 500 })
+    }
     return NextResponse.json({ success: true, instructorsSent: [], lessonCount: lessons.length })
   }
 

@@ -102,11 +102,13 @@ export default function DaySheetActions({
             title="Send master sheet + notes to snowsports@skirainbow.co.nz only"
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 ${
               errors.self ? 'bg-red-100 text-red-700'
+              : lastSent.self ? 'bg-green-100 text-green-700'
               : 'bg-slate-600 text-white hover:bg-slate-700'
             }`}
           >
             {sending === 'self' ? 'Sending…'
               : errors.self ? `✗ ${errors.self}`
+              : lastSent.self ? '✓ Sent to Me'
               : '📩 Send to Me'}
           </button>
         )}
