@@ -11,7 +11,6 @@ const SCHOOL_PHONE = '027 540 2985'
 const MEETING_POINT = 'Mountain Clock, Rainbow Ski Area, St Arnaud'
 
 function buildLetter({
-  customerName,
   date,
   startTime,
   discipline,
@@ -19,9 +18,7 @@ function buildLetter({
   lessonType,
   instructorName,
   instructorPhone,
-  quantity,
 }: {
-  customerName: string
   date: string
   startTime: string
   discipline: string
@@ -29,21 +26,19 @@ function buildLetter({
   lessonType: string
   instructorName: string | null
   instructorPhone: string | null
-  quantity: number
 }) {
   const formattedDate = formatNZDate(date)
   const formattedTime = formatTime(startTime)
   const disc = discipline === 'ski' ? 'Skiing' : 'Snowboarding'
   const lvl = level.charAt(0).toUpperCase() + level.slice(1)
   const type = lessonType === 'private' ? 'Private' : 'Group'
-  const groupNote = quantity > 1 ? ` for ${quantity} people` : ''
   const instrLine = instructorName
     ? `👨‍🏫 Instructor: ${instructorName}${instructorPhone ? ` (${instructorPhone})` : ''}`
     : `👨‍🏫 Instructor: To be confirmed`
 
-  return `Hi ${customerName},
+  return `Hi all,
 
-Thank you for booking with Rainbow Ski School! We're looking forward to welcoming you${groupNote} to the mountain.
+Thank you for booking with Rainbow Ski School! We're looking forward to welcoming you to the mountain.
 
 Here are your lesson details:
 
@@ -58,7 +53,7 @@ If you have any questions before your lesson or need to make any changes, please
 📧 ${SCHOOL_EMAIL}
 📞 ${SCHOOL_PHONE}
 
-We're looking forward to seeing you on the mountain — have a great lesson!
+We're looking forward to seeing you on the mountain!
 
 Warm regards,
 Nic
@@ -85,53 +80,53 @@ export default async function ConfirmationLettersPage({
 
   const lessonIds = (lessons ?? []).map((l) => l.id)
 
-  let letters: Array<{
-    lessonLabel: string
-    customerName: string
-    email: string
+  type LessonGroup = {
+    lesson: Lesson
+    instructor: Instructor | null
+    emails: string[]
+    totalStudents: number
     letter: string
-    lessonId: string
-  }> = []
+  }
+
+  const groups: LessonGroup[] = []
 
   if (lessonIds.length > 0) {
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('lesson_id, quantity, customer:customers(name, email, phone)')
+      .select('lesson_id, quantity, customer:customers(name, email)')
       .in('lesson_id', lessonIds)
       .eq('status', 'confirmed')
       .order('created_at')
 
-    for (const b of bookings ?? []) {
-      const lesson = (lessons ?? []).find((l) => l.id === b.lesson_id) as Lesson | undefined
-      if (!lesson) continue
-
-      const customer = b.customer as unknown as Customer
+    for (const lesson of lessons ?? []) {
+      const l = lesson as Lesson
       const instructor = lesson.instructor as Instructor | null
-      const qty = (b.quantity as number) ?? 1
+      const lessonBookings = (bookings ?? []).filter((b) => b.lesson_id === l.id)
+      if (lessonBookings.length === 0) continue
 
-      const disc = lesson.discipline === 'ski' ? 'Ski' : 'Snowboard'
-      const lvl = lesson.level.charAt(0).toUpperCase() + lesson.level.slice(1)
-      const type = lesson.lesson_type === 'private' ? 'Private' : 'Group'
+      const emails = lessonBookings.map((b) => (b.customer as unknown as Customer).email)
+      const totalStudents = lessonBookings.reduce((sum, b) => sum + ((b.quantity as number) ?? 1), 0)
 
-      letters.push({
-        lessonLabel: `${formatTime(lesson.start_time)} — ${lvl} ${type} ${disc}`,
-        customerName: customer.name,
-        email: customer.email,
+      groups.push({
+        lesson: l,
+        instructor,
+        emails,
+        totalStudents,
         letter: buildLetter({
-          customerName: customer.name,
           date: selectedDate,
-          startTime: lesson.start_time,
-          discipline: lesson.discipline,
-          level: lesson.level,
-          lessonType: lesson.lesson_type,
+          startTime: l.start_time,
+          discipline: l.discipline,
+          level: l.level,
+          lessonType: l.lesson_type,
           instructorName: instructor?.name ?? null,
           instructorPhone: instructor?.phone ?? null,
-          quantity: qty,
         }),
-        lessonId: lesson.id,
       })
     }
   }
+
+  const totalEmails = groups.reduce((sum, g) => sum + g.emails.length, 0)
+  const allEmails = groups.flatMap((g) => g.emails)
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -140,13 +135,10 @@ export default async function ConfirmationLettersPage({
         <div>
           <h1 className="text-2xl font-bold text-alpine-900">Confirmation Letters</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Copy each letter and paste it into an email to the student.
+            Copy the email addresses, paste into To:, then copy the letter and paste into the body.
           </p>
         </div>
-        <Link
-          href="/admin/day-sheet"
-          className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
-        >
+        <Link href="/admin/day-sheet" className="text-sm text-slate-500 hover:text-slate-700">
           ← Day Sheet
         </Link>
       </div>
@@ -170,36 +162,90 @@ export default async function ConfirmationLettersPage({
         </form>
       </div>
 
-      {letters.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
           <p className="text-lg mb-1">No confirmed students on {formatNZDate(selectedDate)}</p>
           <p className="text-sm">Choose a different date above.</p>
         </div>
       ) : (
-        <div className="space-y-5">
-          <p className="text-sm text-slate-500">
-            <span className="font-semibold text-alpine-900">{letters.length}</span> letter{letters.length !== 1 ? 's' : ''} for {formatNZDate(selectedDate)}
-          </p>
+        <div className="space-y-6">
 
-          {letters.map((item, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Card header */}
-              <div className="bg-slate-50 border-b border-slate-100 px-6 py-3 flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-slate-800">{item.customerName}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{item.email} · {item.lessonLabel}</p>
-                </div>
-                <CopyButton text={item.letter} email={item.email} />
+          {/* Copy ALL emails across all lessons */}
+          {totalEmails > 1 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-amber-900 text-sm">All students — {formatNZDate(selectedDate)}</p>
+                <p className="text-xs text-amber-700 mt-0.5">{totalEmails} email addresses across all lessons</p>
               </div>
-
-              {/* Letter preview */}
-              <div className="px-6 py-5">
-                <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
-                  {item.letter}
-                </pre>
-              </div>
+              <CopyButton text={allEmails.join(', ')} label="Copy All Emails" successLabel="✓ Copied!" style="amber" />
             </div>
-          ))}
+          )}
+
+          {/* One card per lesson */}
+          {groups.map((g, i) => {
+            const disc = g.lesson.discipline === 'ski' ? '⛷' : '🏂'
+            const lvl = g.lesson.level.charAt(0).toUpperCase() + g.lesson.level.slice(1)
+            const type = g.lesson.lesson_type === 'private' ? 'Private' : 'Group'
+            const discName = g.lesson.discipline === 'ski' ? 'Ski' : 'Snowboard'
+
+            return (
+              <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                {/* Lesson header */}
+                <div className="bg-slate-50 border-b border-slate-100 px-6 py-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-slate-800 text-base">
+                        {disc} {formatTime(g.lesson.start_time)} — {lvl} {type} {discName}
+                      </p>
+                      <p className="text-sm text-slate-500 mt-0.5">
+                        {g.instructor ? `Instructor: ${g.instructor.name}` : '⚠️ No instructor assigned'} · {g.totalStudents} student{g.totalStudents !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-5 space-y-5">
+                  {/* Email addresses */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Step 1 — Copy email addresses
+                      </p>
+                      <CopyButton
+                        text={g.emails.join(', ')}
+                        label="📋 Copy Addresses"
+                        successLabel="✓ Copied!"
+                        style="default"
+                      />
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-4 py-3 text-sm text-slate-700 font-mono break-all">
+                      {g.emails.join(', ')}
+                    </div>
+                  </div>
+
+                  {/* Letter */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                        Step 2 — Copy letter
+                      </p>
+                      <CopyButton
+                        text={g.letter}
+                        label="📋 Copy Letter"
+                        successLabel="✓ Copied!"
+                        style="green"
+                      />
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-4 py-4">
+                      <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
+                        {g.letter}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
