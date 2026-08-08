@@ -71,7 +71,15 @@ export default async function DaySheetPage({
       <div id="day-sheet-content" className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="no-print flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-alpine-900">Day Sheet</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-alpine-900">Day Sheet</h1>
+            <Link
+              href={`/admin/confirmation-letters?date=${selectedDate}`}
+              className="text-sm font-medium text-alpine-700 hover:text-alpine-900 border border-alpine-300 rounded-lg px-3 py-1.5 hover:bg-alpine-50 transition-colors"
+            >
+              ✉️ Confirmation Letters
+            </Link>
+          </div>
           <DaySheetActions
             date={selectedDate}
             hasLessons={lessonGroups.length > 0}

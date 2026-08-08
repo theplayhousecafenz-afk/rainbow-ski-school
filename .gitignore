@@ -8,3 +8,5 @@ Rainbow ski school prompts and FAQs/
 *.docx
 *.dotx
 tsconfig.tsbuildinfo
+.vercel
+.env*
