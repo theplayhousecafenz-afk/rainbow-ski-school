@@ -38,7 +38,7 @@ export default function BulkCreatePage() {
   const [times, setTimes] = useState(['10:30', '13:00'])
   const [newTime, setNewTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<{ created: number } | null>(null)
+  const [result, setResult] = useState<{ created: number; skipped?: number } | null>(null)
   const [error, setError] = useState('')
 
   function toggleDate(date: string) {
@@ -108,7 +108,10 @@ export default function BulkCreatePage() {
 
       {result && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center justify-between">
-          <p className="text-green-800 font-semibold">✓ {result.created} lessons created successfully!</p>
+          <p className="text-green-800 font-semibold">
+            ✓ {result.created} lesson{result.created !== 1 ? 's' : ''} created
+            {result.skipped ? ` · ${result.skipped} already existed and were skipped` : ''}
+          </p>
           <button onClick={() => setResult(null)} className="text-green-600 text-sm underline">Dismiss</button>
         </div>
       )}

@@ -18,7 +18,32 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerSupabase()
 
-  const rows = lessons.map((l) => ({
+  // Find any lessons that already exist for these date/discipline/time/level combinations
+  const dates = Array.from(new Set(lessons.map((l) => l.date)))
+  const { data: existing } = await supabase
+    .from('lessons')
+    .select('date, start_time, discipline, level, lesson_type')
+    .in('date', dates)
+
+  const existingKeys = new Set(
+    (existing ?? []).map(
+      (l) => `${l.date}|${l.start_time}|${l.discipline}|${l.level}|${l.lesson_type}`
+    )
+  )
+
+  // Only insert lessons that don't already exist
+  const newLessons = lessons.filter((l) => {
+    const key = `${l.date}|${l.start_time}:00|${l.discipline}|${l.level}|${l.lesson_type}`
+    return !existingKeys.has(key)
+  })
+
+  const skipped = lessons.length - newLessons.length
+
+  if (newLessons.length === 0) {
+    return NextResponse.json({ created: 0, skipped, message: 'All lessons already exist — nothing created.' })
+  }
+
+  const rows = newLessons.map((l) => ({
     date: l.date,
     discipline: l.discipline,
     lesson_type: l.lesson_type,
@@ -36,5 +61,5 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ created: data?.length ?? 0 })
+  return NextResponse.json({ created: data?.length ?? 0, skipped })
 }
