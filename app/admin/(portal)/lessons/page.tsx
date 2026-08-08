@@ -47,9 +47,9 @@ export default function AdminLessonsPage() {
   const [error, setError] = useState('')
 
   const loadLessons = useCallback(async () => {
-    const res = await fetch(
-      `/api/admin/lessons${filter !== 'all' ? `?discipline=${filter}` : ''}`
-    )
+    const params = new URLSearchParams({ upcoming: 'true' })
+    if (filter !== 'all') params.set('discipline', filter)
+    const res = await fetch(`/api/admin/lessons?${params}`)
     if (res.ok) {
       const data = await res.json()
       setLessons(data.lessons)
@@ -87,7 +87,10 @@ export default function AdminLessonsPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-alpine-900">Lessons</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-alpine-900">Lessons</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Showing upcoming lessons only · <Link href="/admin/archive" className="text-alpine-700 hover:underline">View archive</Link></p>
+        </div>
         <div className="flex gap-2">
           <Link
             href="/admin/lessons/bulk-create"

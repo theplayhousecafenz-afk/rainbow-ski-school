@@ -29,6 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Link href="/admin/confirmation-letters" className="hover:text-orange-300 transition-colors">
           Letters
         </Link>
+        <Link href="/admin/archive" className="hover:text-orange-300 transition-colors">
+          Archive
+        </Link>
         <Link href="/admin/close-day" className="hover:text-orange-300 transition-colors">
           Close Day
         </Link>

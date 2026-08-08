@@ -7,13 +7,20 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const discipline = searchParams.get('discipline') as Discipline | null
 
+  const upcoming = searchParams.get('upcoming') === 'true'
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' })
+
   const supabase = createServerSupabase()
   let query = supabase
     .from('lessons')
     .select('*, instructor:instructors(name, discipline)')
-    .order('date', { ascending: false })
+    .order('date', { ascending: upcoming })
     .order('start_time')
     .limit(200)
+
+  if (upcoming) {
+    query = query.gte('date', today)
+  }
 
   if (discipline && ['ski', 'snowboard'].includes(discipline)) {
     query = query.eq('discipline', discipline)
