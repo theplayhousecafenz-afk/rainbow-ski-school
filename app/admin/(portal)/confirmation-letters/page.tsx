@@ -7,7 +7,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 const SCHOOL_EMAIL = 'snowsports@skirainbow.co.nz'
-const SCHOOL_PHONE = '03 521 1861'
+const SCHOOL_PHONE = '027 540 2985'
 const MEETING_POINT = 'Mountain Clock, Rainbow Ski Area, St Arnaud'
 
 function buildLetter({
