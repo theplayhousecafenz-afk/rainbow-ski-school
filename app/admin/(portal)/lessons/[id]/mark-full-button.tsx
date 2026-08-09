@@ -23,13 +23,18 @@ export default function MarkFullButton({
     setSaving(true)
     setSaved(false)
     const newMax = isFull ? defaultMax : currentBookings
-    await fetch('/api/admin/lessons', {
+    const res = await fetch('/api/admin/lessons', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: lessonId, max_students: newMax }),
     })
-    setIsFull(!isFull)
     setSaving(false)
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: 'Unknown error' }))
+      alert(`Failed to update lesson: ${error ?? res.statusText}`)
+      return
+    }
+    setIsFull(!isFull)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
