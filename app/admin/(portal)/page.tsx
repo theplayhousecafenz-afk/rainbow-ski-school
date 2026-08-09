@@ -109,9 +109,16 @@ export default async function AdminOverviewPage() {
                             {lesson.instructor ? ` · ${lesson.instructor.name}` : ' · No instructor'}
                           </p>
                         </div>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lesson.on_hold ? STATUS_COLORS.on_hold : STATUS_COLORS[lesson.status]}`}>
-                          {lesson.on_hold ? 'on hold' : lesson.status.replace('_', ' ')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {lesson.current_bookings >= lesson.max_students && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                              full
+                            </span>
+                          )}
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lesson.on_hold ? STATUS_COLORS.on_hold : STATUS_COLORS[lesson.status]}`}>
+                            {lesson.on_hold ? 'on hold' : lesson.status.replace('_', ' ')}
+                          </span>
+                        </div>
                       </Link>
                     ))}
                   </div>
