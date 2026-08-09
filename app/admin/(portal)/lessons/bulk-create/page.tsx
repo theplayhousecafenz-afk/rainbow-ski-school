@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { formatNZDate } from '@/lib/booking-utils'
 
 type Discipline = 'ski' | 'snowboard'
-type Level = 'beginner' | 'intermediate' | 'advanced'
+type Level = 'first_timer' | 'beginner' | 'intermediate' | 'advanced'
 type LessonType = 'group' | 'private'
 
 function toLocalDateStr(d: Date): string {
@@ -165,7 +165,7 @@ export default function BulkCreatePage() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <h2 className="font-semibold text-slate-700 mb-3">Level</h2>
             <div className="flex gap-2 flex-wrap">
-              {(['beginner', 'intermediate', 'advanced'] as Level[]).map((l) => (
+              {(['first_timer', 'beginner', 'intermediate', 'advanced'] as Level[]).map((l) => (
                 <button
                   key={l}
                   onClick={() => setLevel(l)}
@@ -175,7 +175,7 @@ export default function BulkCreatePage() {
                       : 'bg-white text-slate-600 border-slate-300 hover:border-alpine-600'
                   }`}
                 >
-                  {l.charAt(0).toUpperCase() + l.slice(1)}
+                  {l === 'first_timer' ? 'First Timer' : l.charAt(0).toUpperCase() + l.slice(1)}
                 </button>
               ))}
             </div>

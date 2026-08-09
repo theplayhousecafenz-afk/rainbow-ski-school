@@ -239,7 +239,7 @@ function BookingForm() {
                       <p className="font-semibold text-slate-800">
                         {formatTime(lesson.start_time)} ·{' '}
                         <span className="capitalize">{lesson.lesson_type}</span> ·{' '}
-                        <span className="capitalize">{lesson.level}</span>
+                        <span className="capitalize">{lesson.level === 'first_timer' ? 'First Timer' : lesson.level}</span>
                       </p>
                       <p className="text-sm text-slate-500 mt-0.5">
                         {lesson.current_bookings}/{lesson.max_students} booked ·{' '}

@@ -68,7 +68,7 @@ export default async function BookingDetailPage({ params }: { params: { id: stri
               <Row label="Date" value={formatNZDate(lesson.date)} />
               <Row label="Time" value={formatTime(lesson.start_time)} />
               <Row label="Type" value={`${lesson.lesson_type.charAt(0).toUpperCase() + lesson.lesson_type.slice(1)} lesson`} />
-              <Row label="Level" value={lesson.level.charAt(0).toUpperCase() + lesson.level.slice(1)} />
+              <Row label="Level" value={lesson.level === 'first_timer' ? 'First Timer' : lesson.level.charAt(0).toUpperCase() + lesson.level.slice(1)} />
               <Row label="Meeting Point" value="Mountain Clock" />
               <Row
                 label="Lesson Status"

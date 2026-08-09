@@ -19,7 +19,7 @@ const PRICING = [
   },
 ]
 
-const LEVELS = ['Beginner', 'Intermediate', 'Advanced']
+const LEVELS = ['First Timer', 'Beginner', 'Intermediate', 'Advanced']
 
 export default function HomePage() {
   return (
@@ -180,7 +180,8 @@ export default function HomePage() {
                 <div key={level} className="bg-slate-50 rounded-xl p-6 border border-slate-200">
                   <h3 className="font-bold text-alpine-800 mb-2">{level}</h3>
                   <p className="text-slate-500 text-sm">
-                    {level === 'Beginner' && 'Never been on snow? No worries — start here.'}
+                    {level === 'First Timer' && 'Absolutely zero experience? Perfect — this lesson is made for you.'}
+                    {level === 'Beginner' && 'You\'ve had a go before. Build on the basics and get more confident.'}
                     {level === 'Intermediate' && "You can get down a blue run. Ready to improve technique."}
                     {level === 'Advanced' && 'Confident on blacks and looking to refine your skills.'}
                   </p>

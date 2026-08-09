@@ -85,7 +85,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
             <Detail label="Date" value={formatNZDate(l.date)} />
             <Detail label="Time" value={formatTime(l.start_time)} />
             <Detail label="Type" value={l.lesson_type.charAt(0).toUpperCase() + l.lesson_type.slice(1)} />
-            <Detail label="Level" value={l.level.charAt(0).toUpperCase() + l.level.slice(1)} />
+            <Detail label="Level" value={l.level === 'first_timer' ? 'First Timer' : l.level.charAt(0).toUpperCase() + l.level.slice(1)} />
             <Detail label="Students" value={`${totalStudents} confirmed`} />
           </div>
 
