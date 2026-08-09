@@ -145,7 +145,7 @@ export default async function DaySheetPage({
                     <div className={`px-6 py-4 flex items-center justify-between border-b border-slate-100 ${lesson.discipline === 'ski' ? 'bg-blue-50' : 'bg-purple-50'}`}>
                       <div>
                         <p className={`text-xs font-bold uppercase tracking-widest mb-0.5 ${lesson.discipline === 'ski' ? 'text-blue-600' : 'text-purple-600'}`}>
-                          {lesson.discipline} · {lesson.lesson_type} · {lesson.level}
+                          {lesson.discipline} · {lesson.lesson_type}{lesson.level !== 'private' ? ` · ${lesson.level === 'first_timer' ? 'first timer' : lesson.level}` : ''}
                         </p>
                         <p className="text-lg font-bold text-slate-800">{formatTime(lesson.start_time)}</p>
                       </div>

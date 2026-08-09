@@ -179,6 +179,7 @@ export default function AdminLessonsPage() {
                 onChange={(e) => setForm({ ...form, level: e.target.value as LessonLevel })}
                 className={input}
               >
+                <option value="private">Private</option>
                 <option value="first_timer">First Timer</option>
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>

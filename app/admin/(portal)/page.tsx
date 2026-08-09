@@ -102,7 +102,7 @@ export default async function AdminOverviewPage() {
                       >
                         <div>
                           <p className="text-sm font-medium text-slate-800">
-                            {formatTime(lesson.start_time)} · {lesson.lesson_type} · {lesson.level}
+                            {formatTime(lesson.start_time)} · {lesson.lesson_type}{lesson.level !== 'private' ? ` · ${lesson.level === 'first_timer' ? 'first timer' : lesson.level}` : ''}
                           </p>
                           <p className="text-xs text-slate-500 mt-0.5">
                             {lesson.current_bookings}/{lesson.max_students} students

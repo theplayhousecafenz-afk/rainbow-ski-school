@@ -1,6 +1,6 @@
 export type Discipline = 'ski' | 'snowboard'
 export type LessonType = 'group' | 'private'
-export type LessonLevel = 'first_timer' | 'beginner' | 'intermediate' | 'advanced'
+export type LessonLevel = 'first_timer' | 'beginner' | 'intermediate' | 'advanced' | 'private'
 export type LessonStatus =
   | 'pending'
   | 'confirmed'
