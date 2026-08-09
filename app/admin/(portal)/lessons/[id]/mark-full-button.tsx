@@ -37,6 +37,12 @@ export default function MarkFullButton({
   // Don't show for private lessons — they're always 1 person anyway
   if (lessonType === 'private') return null
 
+  // If already naturally full, no need to manually mark it
+  if (!isFull && currentBookings >= defaultMax) return null
+
+  // If no bookings yet, nothing to anchor max_students to — hide button
+  if (!isFull && currentBookings === 0) return null
+
   return (
     <div className={`rounded-2xl border shadow-sm p-6 mb-6 ${isFull ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
       <div className="flex items-center justify-between">
