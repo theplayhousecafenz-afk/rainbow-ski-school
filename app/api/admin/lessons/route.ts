@@ -64,13 +64,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { id, instructor_id, on_hold } = await request.json()
+  const { id, instructor_id, on_hold, max_students } = await request.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = createServerSupabase()
   const updates: Record<string, unknown> = {}
   if (instructor_id !== undefined) updates.instructor_id = instructor_id ?? null
   if (on_hold !== undefined) updates.on_hold = on_hold
+  if (max_students !== undefined) updates.max_students = max_students
 
   const { error } = await supabase
     .from('lessons')

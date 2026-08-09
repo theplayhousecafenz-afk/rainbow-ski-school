@@ -6,6 +6,7 @@ import type { Lesson, Booking, Customer, Availability, Instructor } from '@/type
 // Note: Instructor still used for avails cast below
 import AssignInstructor from './assign-instructor'
 import HoldButton from './hold-button'
+import MarkFullButton from './mark-full-button'
 import CancelBookingButton from './cancel-booking-button'
 import CancelLessonButton from './cancel-lesson-button'
 
@@ -90,6 +91,14 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
 
       {/* Hold */}
       <HoldButton lessonId={l.id} initialOnHold={l.on_hold ?? false} />
+
+      {/* Mark as full */}
+      <MarkFullButton
+        lessonId={l.id}
+        currentBookings={l.current_bookings}
+        maxStudents={l.max_students}
+        lessonType={l.lesson_type}
+      />
 
       {/* Cancel lesson */}
       <CancelLessonButton
