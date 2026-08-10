@@ -233,7 +233,7 @@ export default function AdminLessonsPage() {
                   </td>
                   <td className="px-4 py-3 capitalize">{lesson.discipline}</td>
                   <td className="px-4 py-3">{formatTime(lesson.start_time)}</td>
-                  <td className="px-4 py-3 capitalize">{lesson.lesson_type} · {lesson.level}</td>
+                  <td className="px-4 py-3 capitalize">{lesson.lesson_type}{lesson.level !== 'private' ? ` · ${lesson.level === 'first_timer' ? 'First Timer' : lesson.level}` : ''}</td>
                   <td className="px-4 py-3">{lesson.current_bookings}/{lesson.max_students}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
