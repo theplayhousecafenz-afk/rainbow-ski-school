@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatNZDate } from '@/lib/booking-utils'
 
@@ -29,6 +30,7 @@ function getUpcomingWeekends(weeks: number): string[] {
 }
 
 export default function BulkCreatePage() {
+  const router = useRouter()
   const weekends = getUpcomingWeekends(12)
 
   const [selectedDates, setSelectedDates] = useState<string[]>([])
@@ -92,6 +94,7 @@ export default function BulkCreatePage() {
       if (!res.ok) { setError(data.error ?? 'Failed to create lessons'); return }
       setResult(data)
       setSelectedDates([])
+      router.refresh() // bust router cache so overview shows new lessons immediately
     } catch {
       setError('Network error — please try again')
     } finally {

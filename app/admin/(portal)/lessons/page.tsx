@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatNZDate, formatTime } from '@/lib/booking-utils'
 import type { Lesson, Discipline, LessonType, LessonLevel } from '@/types'
@@ -39,6 +40,7 @@ function needsInstructor(lesson: Lesson): boolean {
 }
 
 export default function AdminLessonsPage() {
+  const router = useRouter()
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [filter, setFilter] = useState<'all' | 'ski' | 'snowboard'>('all')
   const [showCreate, setShowCreate] = useState(false)
@@ -77,6 +79,7 @@ export default function AdminLessonsPage() {
       setShowCreate(false)
       setForm(EMPTY_FORM)
       loadLessons()
+      router.refresh() // bust router cache so overview shows new lesson immediately
     } else {
       const data = await res.json()
       setError(data.error ?? 'Failed to create lesson')
