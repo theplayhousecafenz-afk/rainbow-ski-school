@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase'
 import { sendInstructorAssigned } from '@/lib/email'
 import type { Discipline, Instructor, Lesson } from '@/types'
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/admin')
   return NextResponse.json({ lesson: data }, { status: 201 })
 }
 

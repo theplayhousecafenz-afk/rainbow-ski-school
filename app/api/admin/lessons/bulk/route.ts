@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase'
 
 interface BulkLesson {
@@ -61,5 +62,6 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  revalidatePath('/admin')
   return NextResponse.json({ created: data?.length ?? 0, skipped })
 }
