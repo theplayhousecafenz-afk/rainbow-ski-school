@@ -27,7 +27,7 @@ export default async function AdminOverviewPage() {
     .neq('status', 'closed')
     .order('date')
     .order('start_time')
-    .limit(60)
+    .limit(150)
 
   if (lessonErr) console.error('[Admin overview] lessons query error:', lessonErr)
 
