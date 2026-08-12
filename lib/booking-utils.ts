@@ -1,5 +1,14 @@
 import type { Lesson, BookingAvailability } from '@/types'
 
+// Capacity of a group lesson. Held at 7 rather than 8 to keep groups a
+// manageable size for instructors. Change here and every booking form,
+// create route and capacity check follows.
+export const GROUP_MAX_STUDENTS = 7
+
+export function defaultMaxStudents(lessonType: 'group' | 'private'): number {
+  return lessonType === 'group' ? GROUP_MAX_STUDENTS : 1
+}
+
 // NZST = UTC+12 (ski season is NZ winter = May–Sep, no daylight saving)
 // lesson.date stored as "YYYY-MM-DD" parsed as UTC midnight by JS
 // Saturday (day 6 NZ) → cutoff Thursday 23:59:59 NZST = Thursday 11:59:59 UTC

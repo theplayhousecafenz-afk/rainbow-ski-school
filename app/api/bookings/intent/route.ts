@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { stripe, getPrice } from '@/lib/stripe'
-import { canBook, formatNZDate, formatTime } from '@/lib/booking-utils'
+import { canBook, formatNZDate, formatTime, GROUP_MAX_STUDENTS } from '@/lib/booking-utils'
 import type { Lesson, CustomerType } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     promoCode?: string
     quantity?: number
   }
-  const qty = Math.max(1, Math.min(quantity ?? 1, 8))
+  const qty = Math.max(1, Math.min(quantity ?? 1, GROUP_MAX_STUDENTS))
 
   if (!lessonId || !customerType || !name || !email || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

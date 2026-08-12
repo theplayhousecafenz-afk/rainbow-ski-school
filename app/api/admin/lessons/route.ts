@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase'
+import { defaultMaxStudents } from '@/lib/booking-utils'
 import { sendInstructorAssigned } from '@/lib/email'
 import type { Discipline, Instructor, Lesson } from '@/types'
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       lesson_type,
       start_time,
       level,
-      max_students: max_students ?? (lesson_type === 'group' ? 8 : 1),
+      max_students: max_students ?? defaultMaxStudents(lesson_type),
       min_students: min_students ?? (lesson_type === 'group' ? 2 : 1),
       status: 'pending',
     })

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatNZDate, formatTime } from '@/lib/booking-utils'
+import { formatNZDate, formatTime, defaultMaxStudents } from '@/lib/booking-utils'
 import type { Lesson, Discipline, LessonType, LessonLevel } from '@/types'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -71,7 +71,7 @@ export default function AdminLessonsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        max_students: form.lesson_type === 'group' ? 8 : 1,
+        max_students: defaultMaxStudents(form.lesson_type),
         min_students: form.lesson_type === 'group' ? 2 : 1,
       }),
     })

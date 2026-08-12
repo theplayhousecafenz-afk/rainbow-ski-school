@@ -7,7 +7,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import Nav from '@/components/nav'
 import Footer from '@/components/footer'
-import { getUpcomingWeekends, formatNZDate, formatTime, getBookingCutoff } from '@/lib/booking-utils'
+import { getUpcomingWeekends, formatNZDate, formatTime, getBookingCutoff, GROUP_MAX_STUDENTS } from '@/lib/booking-utils'
 import type { Lesson, Discipline, CustomerType, BookingAvailability } from '@/types'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -293,7 +293,7 @@ function BookingForm() {
       ? Math.max(1, Math.round(basePrice * (1 - promoStatus.discount / 100)))
       : basePrice
     const spotsLeft = state.lesson ? state.lesson.max_students - state.lesson.current_bookings : 1
-    const maxQty = state.lesson?.lesson_type === 'private' ? 1 : Math.min(spotsLeft, 8)
+    const maxQty = state.lesson?.lesson_type === 'private' ? 1 : Math.min(spotsLeft, GROUP_MAX_STUDENTS)
 
     const handleDetailsNext = async (e: React.FormEvent) => {
       e.preventDefault()

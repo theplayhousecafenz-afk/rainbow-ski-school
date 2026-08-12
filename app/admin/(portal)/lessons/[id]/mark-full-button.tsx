@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { defaultMaxStudents } from '@/lib/booking-utils'
 
 export default function MarkFullButton({
   lessonId,
@@ -13,7 +14,7 @@ export default function MarkFullButton({
   maxStudents: number
   lessonType: string
 }) {
-  const defaultMax = lessonType === 'group' ? 8 : 1
+  const defaultMax = defaultMaxStudents(lessonType as 'group' | 'private')
   // Lesson is "manually full" when max_students has been reduced below default
   const [isFull, setIsFull] = useState(maxStudents < defaultMax)
   const [saving, setSaving] = useState(false)

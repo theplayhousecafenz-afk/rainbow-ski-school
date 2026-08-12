@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase'
+import { defaultMaxStudents } from '@/lib/booking-utils'
 
 interface BulkLesson {
   date: string
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     lesson_type: l.lesson_type,
     level: l.level,
     start_time: l.start_time,
-    max_students: l.lesson_type === 'group' ? 8 : 1,
+    max_students: defaultMaxStudents(l.lesson_type),
     min_students: l.lesson_type === 'group' ? 2 : 1,
     status: 'pending',
   }))
