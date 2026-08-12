@@ -34,11 +34,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Payment not completed' }, { status: 402 })
   }
 
-  // Only update DB if the webhook hasn't already done so
-  const alreadyConfirmed = booking.status === 'confirmed'
+  // Atomic claim — see the matching comment in the Stripe webhook. Only the
+  // request that actually flips pending -> confirmed counts the seats, so the
+  // webhook and this route can never both add them.
   const qty = parseInt(intent.metadata?.quantity ?? '1') || 1
-  if (!alreadyConfirmed) {
-    await supabase.from('bookings').update({ status: 'confirmed', quantity: qty }).eq('id', bookingId)
+  const { data: claimed } = await supabase
+    .from('bookings')
+    .update({ status: 'confirmed', quantity: qty })
+    .eq('id', bookingId)
+    .eq('status', 'pending')
+    .select('id')
+
+  const weConfirmedIt = !!claimed && claimed.length === 1
+  const alreadyConfirmed = !weConfirmedIt
+  if (weConfirmedIt) {
     await supabase.rpc('increment_bookings', { lesson: booking.lesson_id, delta: qty })
   }
 

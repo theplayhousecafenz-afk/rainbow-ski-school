@@ -45,20 +45,27 @@ export default function MarkFullButton({
   // If already naturally full, no need to manually mark it
   if (!isFull && currentBookings >= defaultMax) return null
 
-  // If no bookings yet, nothing to anchor max_students to — hide button
-  if (!isFull && currentBookings === 0) return null
-
   return (
     <div className={`rounded-2xl border shadow-sm p-6 mb-6 ${isFull ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`font-semibold mb-1 ${isFull ? 'text-red-800' : 'text-slate-700'}`}>
-            {isFull ? '🚫 Lesson Marked Full' : 'Mark Lesson Full'}
+            {isFull
+              ? currentBookings === 0
+                ? '🚫 Lesson Closed'
+                : '🚫 Lesson Marked Full'
+              : currentBookings === 0
+                ? 'Close This Lesson'
+                : 'Mark Lesson Full'}
           </h2>
           <p className="text-sm text-slate-500">
             {isFull
-              ? `New bookings are blocked — lesson is set to ${currentBookings}/${currentBookings}. Remove to reopen spots.`
-              : `Manually close this lesson to new bookings even though it has ${defaultMax - currentBookings} spot${defaultMax - currentBookings !== 1 ? 's' : ''} remaining.`}
+              ? currentBookings === 0
+                ? 'Closed to new bookings — nobody is booked in. Reopen to put it back on sale.'
+                : `New bookings are blocked — lesson is set to ${currentBookings}/${currentBookings}. Reopen to free up spots.`
+              : currentBookings === 0
+                ? 'Take this lesson off the public booking page. Nobody is booked in, so no one is affected.'
+                : `Manually close this lesson to new bookings even though it has ${defaultMax - currentBookings} spot${defaultMax - currentBookings !== 1 ? 's' : ''} remaining.`}
           </p>
         </div>
         <button
@@ -70,7 +77,13 @@ export default function MarkFullButton({
               : 'bg-red-600 hover:bg-red-700 text-white'
           }`}
         >
-          {saving ? 'Saving…' : saved ? '✓ Done' : isFull ? 'Reopen Spots' : 'Mark as Full'}
+          {saving
+            ? 'Saving…'
+            : saved
+              ? '✓ Done'
+              : isFull
+                ? currentBookings === 0 ? 'Reopen Lesson' : 'Reopen Spots'
+                : currentBookings === 0 ? 'Close Lesson' : 'Mark as Full'}
         </button>
       </div>
     </div>

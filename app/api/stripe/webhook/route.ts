@@ -22,23 +22,23 @@ export async function POST(request: NextRequest) {
     const intent = event.data.object as Stripe.PaymentIntent
     const supabase = createServerSupabase()
 
-    const { data: booking } = await supabase
+    const qty = parseInt(intent.metadata.quantity ?? '1', 10) || 1
+
+    // Atomic claim: flip pending -> confirmed and only count the seats if THIS
+    // request is the one that actually made the change. The confirm route runs
+    // the same claim, so whichever arrives second gets zero rows back and skips
+    // the increment. Without this both can read "pending" and each add the
+    // seats, double-counting the booking.
+    const { data: claimed } = await supabase
       .from('bookings')
-      .select('id, status')
+      .update({ status: 'confirmed', quantity: qty })
       .eq('stripe_payment_intent_id', intent.id)
-      .maybeSingle()
+      .eq('status', 'pending')
+      .select('id, lesson_id')
 
-    // Only update if still pending (idempotency — confirm route may have already handled it)
-    if (booking && booking.status === 'pending') {
-      const qty = parseInt(intent.metadata.quantity ?? '1', 10) || 1
-
-      await supabase
-        .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', booking.id)
-
+    if (claimed && claimed.length === 1) {
       await supabase.rpc('increment_bookings', {
-        lesson: intent.metadata.lessonId,
+        lesson: claimed[0].lesson_id,
         delta: qty,
       })
     }
