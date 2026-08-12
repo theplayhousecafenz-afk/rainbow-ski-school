@@ -34,9 +34,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   }
 
-  // Prevent duplicate bookings — check if this customer already has an active booking
-  // for this lesson (confirmed or pending-payment). This stops double-charges when a
-  // customer tries again after thinking their first booking didn't go through.
+  // Guard against an accidental double-submit only — a *paid* booking for the same
+  // lesson, same ticket type, made in the last 30 minutes. Deliberately narrow:
+  // families legitimately book an adult ticket and a child ticket for the same lesson
+  // as two transactions (prices differ), and someone who abandoned checkout earlier
+  // must be able to come back and pay.
   const { data: existingCustomer } = await supabase
     .from('customers')
     .select('id')
@@ -44,17 +46,23 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (existingCustomer) {
-    const { data: existingBooking } = await supabase
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+    const { data: recentDuplicate } = await supabase
       .from('bookings')
-      .select('id, status')
+      .select('id')
       .eq('lesson_id', lessonId)
       .eq('customer_id', existingCustomer.id)
-      .in('status', ['confirmed', 'pending'])
+      .eq('customer_type', customerType)
+      .eq('status', 'confirmed')
+      .gte('created_at', thirtyMinsAgo)
       .maybeSingle()
 
-    if (existingBooking) {
+    if (recentDuplicate) {
       return NextResponse.json(
-        { error: 'You already have a booking for this lesson. Check your email for confirmation.' },
+        {
+          error:
+            'You just booked this lesson — your payment went through. Check your email for confirmation, or contact us if you need to add more people.',
+        },
         { status: 409 }
       )
     }
