@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -14,33 +13,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       <nav className="bg-alpine-900 text-white h-14 flex items-center px-6 gap-6 text-sm font-medium shrink-0">
-        <Link href="/admin" className="font-bold text-base mr-4">
+        <a href="/admin" className="font-bold text-base mr-4">
           🎿 Admin
-        </Link>
-        <Link href="/admin/lessons" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/lessons" className="hover:text-orange-300 transition-colors">
           Lessons
-        </Link>
-        <Link href="/admin/instructors" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/instructors" className="hover:text-orange-300 transition-colors">
           Instructors
-        </Link>
-        <Link href="/admin/day-sheet" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/day-sheet" className="hover:text-orange-300 transition-colors">
           Day Sheet
-        </Link>
-        <Link href="/admin/confirmation-letters" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/confirmation-letters" className="hover:text-orange-300 transition-colors">
           Letters
-        </Link>
-        <Link href="/admin/archive" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/archive" className="hover:text-orange-300 transition-colors">
           Archive
-        </Link>
-        <Link href="/admin/close-day" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/close-day" className="hover:text-orange-300 transition-colors">
           Close Day
-        </Link>
-        <Link href="/admin/reports" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/reports" className="hover:text-orange-300 transition-colors">
           Reports
-        </Link>
-        <Link href="/admin/promos" className="hover:text-orange-300 transition-colors">
+        </a>
+        <a href="/admin/promos" className="hover:text-orange-300 transition-colors">
           Promo Codes
-        </Link>
+        </a>
         <div className="ml-auto">
           <button
             onClick={logout}
