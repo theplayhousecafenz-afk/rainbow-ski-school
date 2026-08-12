@@ -67,14 +67,35 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { id, instructor_id, on_hold, max_students } = await request.json()
+  const { id, instructor_id, on_hold, max_students, closed_to_bookings } = await request.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   const supabase = createServerSupabase()
   const updates: Record<string, unknown> = {}
   if (instructor_id !== undefined) updates.instructor_id = instructor_id ?? null
   if (on_hold !== undefined) updates.on_hold = on_hold
-  if (max_students !== undefined) updates.max_students = max_students
+  if (closed_to_bookings !== undefined) updates.closed_to_bookings = closed_to_bookings
+
+  if (max_students !== undefined) {
+    const cap = Number(max_students)
+    if (!Number.isInteger(cap) || cap < 1 || cap > 30) {
+      return NextResponse.json({ error: 'Capacity must be a whole number between 1 and 30' }, { status: 400 })
+    }
+    // Refuse to drop capacity below the students already booked in — they would
+    // silently no longer fit. Closing the lesson is the right tool for that.
+    const { data: current } = await supabase
+      .from('lessons')
+      .select('current_bookings')
+      .eq('id', id)
+      .single()
+    if (current && cap < current.current_bookings) {
+      return NextResponse.json(
+        { error: `Cannot set capacity to ${cap} — ${current.current_bookings} students are already booked in.` },
+        { status: 400 }
+      )
+    }
+    updates.max_students = cap
+  }
 
   const { error } = await supabase
     .from('lessons')

@@ -110,11 +110,15 @@ export default async function AdminOverviewPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {lesson.current_bookings >= lesson.max_students && (
+                          {lesson.closed_to_bookings ? (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                              closed
+                            </span>
+                          ) : lesson.current_bookings >= lesson.max_students ? (
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                               full
                             </span>
-                          )}
+                          ) : null}
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lesson.on_hold ? STATUS_COLORS.on_hold : STATUS_COLORS[lesson.status]}`}>
                             {lesson.on_hold ? 'on hold' : lesson.status.replace('_', ' ')}
                           </span>

@@ -9,6 +9,7 @@ interface BulkLesson {
   lesson_type: 'group' | 'private'
   level: string
   start_time: string
+  max_students?: number
 }
 
 export async function POST(request: NextRequest) {
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     lesson_type: l.lesson_type,
     level: l.level,
     start_time: l.start_time,
-    max_students: defaultMaxStudents(l.lesson_type),
+    max_students: l.max_students ?? defaultMaxStudents(l.lesson_type),
     min_students: l.lesson_type === 'group' ? 2 : 1,
     status: 'pending',
   }))

@@ -36,6 +36,7 @@ export interface Lesson {
   instructor_id: string | null
   instructor_confirmed: boolean
   on_hold: boolean
+  closed_to_bookings: boolean
   status: LessonStatus
   created_at: string
   instructor?: Instructor | null

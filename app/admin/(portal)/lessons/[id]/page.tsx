@@ -7,6 +7,7 @@ import type { Lesson, Booking, Customer, Availability, Instructor } from '@/type
 import AssignInstructor from './assign-instructor'
 import HoldButton from './hold-button'
 import MarkFullButton from './mark-full-button'
+import CapacityEditor from './capacity-editor'
 import CancelBookingButton from './cancel-booking-button'
 import CancelLessonButton from './cancel-lesson-button'
 
@@ -92,12 +93,19 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
       {/* Hold */}
       <HoldButton lessonId={l.id} initialOnHold={l.on_hold ?? false} />
 
-      {/* Mark as full */}
+      {/* Class size */}
+      <CapacityEditor
+        lessonId={l.id}
+        maxStudents={l.max_students}
+        currentBookings={l.current_bookings}
+      />
+
+      {/* Close to new bookings */}
       <MarkFullButton
         lessonId={l.id}
         currentBookings={l.current_bookings}
         maxStudents={l.max_students}
-        lessonType={l.lesson_type}
+        closedToBookings={l.closed_to_bookings ?? false}
       />
 
       {/* Cancel lesson */}

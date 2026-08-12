@@ -30,6 +30,8 @@ export function canBook(lesson: Lesson, now: Date, qty = 1): BookingAvailability
   const full = lesson.current_bookings + qty > lesson.max_students
 
   if (lesson.on_hold) return { available: false, reason: 'on_hold' }
+  // Manually closed by an admin — capacity is irrelevant, no more bookings
+  if (lesson.closed_to_bookings) return { available: false, reason: 'full' }
   if (full) return { available: false, reason: 'full' }
   if (isBefore) return { available: true, reason: 'open' }
   if (confirmed) return { available: true, reason: 'late_booking' }

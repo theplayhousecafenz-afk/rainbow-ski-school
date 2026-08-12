@@ -21,6 +21,7 @@ type CreateForm = {
   lesson_type: LessonType
   start_time: string
   level: LessonLevel
+  max_students: number
 }
 
 const EMPTY_FORM: CreateForm = {
@@ -29,6 +30,7 @@ const EMPTY_FORM: CreateForm = {
   lesson_type: 'group',
   start_time: '10:30',
   level: 'beginner',
+  max_students: defaultMaxStudents('group'),
 }
 
 function needsInstructor(lesson: Lesson): boolean {
@@ -71,7 +73,6 @@ export default function AdminLessonsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        max_students: defaultMaxStudents(form.lesson_type),
         min_students: form.lesson_type === 'group' ? 2 : 1,
       }),
     })
@@ -159,7 +160,12 @@ export default function AdminLessonsPage() {
                 value={form.lesson_type}
                 onChange={(e) => {
                   const t = e.target.value as LessonType
-                  setForm({ ...form, lesson_type: t, start_time: t === 'group' ? '10:30' : '09:30' })
+                  setForm({
+                    ...form,
+                    lesson_type: t,
+                    start_time: t === 'group' ? '10:30' : '09:30',
+                    max_students: defaultMaxStudents(t),
+                  })
                 }}
                 className={input}
               >
@@ -189,7 +195,22 @@ export default function AdminLessonsPage() {
                 <option value="advanced">Advanced</option>
               </select>
             </Field>
+            <Field label="Max Students">
+              <input
+                type="number"
+                min={1}
+                max={30}
+                required
+                value={form.max_students}
+                onChange={(e) => setForm({ ...form, max_students: parseInt(e.target.value, 10) || 1 })}
+                className={input}
+              />
+            </Field>
           </div>
+          <p className="text-xs text-slate-400 mt-2">
+            Default is {defaultMaxStudents('group')} for group lessons. Raise it for a larger
+            group you plan to run with more than one instructor.
+          </p>
           {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
           <div className="flex gap-3 mt-5">
             <button

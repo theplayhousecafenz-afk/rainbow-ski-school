@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatNZDate } from '@/lib/booking-utils'
+import { formatNZDate, defaultMaxStudents } from '@/lib/booking-utils'
 
 type Discipline = 'ski' | 'snowboard'
 type Level = 'first_timer' | 'beginner' | 'intermediate' | 'advanced' | 'private'
@@ -37,6 +37,7 @@ export default function BulkCreatePage() {
   const [disciplines, setDisciplines] = useState<Discipline[]>(['ski', 'snowboard'])
   const [level, setLevel] = useState<Level>('beginner')
   const [lessonType, setLessonType] = useState<LessonType>('group')
+  const [maxStudents, setMaxStudents] = useState<number>(defaultMaxStudents('group'))
   const [times, setTimes] = useState(['10:30', '13:00'])
   const [newTime, setNewTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -79,7 +80,7 @@ export default function BulkCreatePage() {
     for (const date of selectedDates) {
       for (const discipline of disciplines) {
         for (const time of times) {
-          lessons.push({ date, discipline, lesson_type: lessonType, level, start_time: time })
+          lessons.push({ date, discipline, lesson_type: lessonType, level, start_time: time, max_students: maxStudents })
         }
       }
     }
@@ -151,7 +152,7 @@ export default function BulkCreatePage() {
               {(['group', 'private'] as LessonType[]).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setLessonType(t)}
+                  onClick={() => { setLessonType(t); setMaxStudents(defaultMaxStudents(t)) }}
                   className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${
                     lessonType === t
                       ? 'bg-alpine-900 text-white border-alpine-900'
@@ -182,6 +183,26 @@ export default function BulkCreatePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Class size */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h2 className="font-semibold text-slate-700 mb-3">Class Size</h2>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={maxStudents}
+                onChange={(e) => setMaxStudents(parseInt(e.target.value, 10) || 1)}
+                className="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alpine-600"
+              />
+              <span className="text-sm text-slate-500">students per lesson</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-2">
+              Default {defaultMaxStudents('group')}. Raise it for larger groups run with more
+              than one instructor.
+            </p>
           </div>
 
           {/* Times */}
