@@ -34,6 +34,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
   }
 
+  // Prevent duplicate bookings — check if this customer already has an active booking
+  // for this lesson (confirmed or pending-payment). This stops double-charges when a
+  // customer tries again after thinking their first booking didn't go through.
+  const { data: existingCustomer } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('email', email.toLowerCase())
+    .maybeSingle()
+
+  if (existingCustomer) {
+    const { data: existingBooking } = await supabase
+      .from('bookings')
+      .select('id, status')
+      .eq('lesson_id', lessonId)
+      .eq('customer_id', existingCustomer.id)
+      .in('status', ['confirmed', 'pending'])
+      .maybeSingle()
+
+    if (existingBooking) {
+      return NextResponse.json(
+        { error: 'You already have a booking for this lesson. Check your email for confirmation.' },
+        { status: 409 }
+      )
+    }
+  }
+
   const availability = canBook(lesson as Lesson, new Date(), qty)
   if (!availability.available) {
     return NextResponse.json({ error: availability.reason }, { status: 409 })
@@ -109,6 +135,7 @@ export async function POST(request: NextRequest) {
       customer_id: customer.id,
       discipline: lesson.discipline,
       customer_type: customerType,
+      quantity: qty,
       amount_paid: amount,
       stripe_payment_intent_id: paymentIntent.id,
       status: 'pending',

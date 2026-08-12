@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
 
     // Only update if still pending (idempotency — confirm route may have already handled it)
     if (booking && booking.status === 'pending') {
+      const qty = parseInt(intent.metadata.quantity ?? '1', 10) || 1
+
       await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
 
       await supabase.rpc('increment_bookings', {
         lesson: intent.metadata.lessonId,
-        delta: 1,
+        delta: qty,
       })
     }
   }
