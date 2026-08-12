@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { stripe, getPrice } from '@/lib/stripe'
-import { canBook } from '@/lib/booking-utils'
+import { canBook, formatNZDate, formatTime } from '@/lib/booking-utils'
 import type { Lesson, CustomerType } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -121,16 +121,36 @@ export async function POST(request: NextRequest) {
     customer = created
   }
 
-  // Create Stripe PaymentIntent
+  // Describe the booking on the Stripe receipt so it doubles as proof of booking
+  const levelLabel =
+    lesson.level === 'first_timer'
+      ? 'First Timer'
+      : lesson.level.charAt(0).toUpperCase() + lesson.level.slice(1)
+  const description =
+    `Ski Rainbow Snowsports — ${lesson.discipline === 'ski' ? 'Ski' : 'Snowboard'} ${lesson.lesson_type} lesson` +
+    `, ${formatNZDate(lesson.date)} at ${formatTime(lesson.start_time)}` +
+    `${lesson.level === 'private' ? '' : ` (${levelLabel})`}` +
+    ` — ${qty} ${qty === 1 ? 'person' : 'people'}`
+
+  // Create Stripe PaymentIntent.
+  // receipt_email makes Stripe send its own receipt the moment payment succeeds —
+  // this reaches every address (Gmail, Hotmail, 163.com, ...) and does not depend
+  // on our Resend domain being verified.
   const paymentIntent = await stripe.paymentIntents.create({
     amount,
     currency: 'nzd',
+    receipt_email: email.toLowerCase().trim(),
+    description,
     metadata: {
       lessonId,
       customerId: customer.id,
       customerType,
       discipline: lesson.discipline,
       quantity: String(qty),
+      customerName: name.trim(),
+      customerPhone: phone.trim(),
+      lessonDate: lesson.date,
+      lessonTime: lesson.start_time,
       ...(appliedPromoCode ? { promoCode: appliedPromoCode } : {}),
     },
   })
