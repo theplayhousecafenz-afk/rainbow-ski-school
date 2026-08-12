@@ -66,9 +66,9 @@ export default async function AdminOverviewPage() {
           <ul className="text-sm text-orange-700 space-y-1">
             {atRisk.map((l) => (
               <li key={l.id}>
-                <Link href={`/admin/lessons/${l.id}`} className="underline">
+                <a href={`/admin/lessons/${l.id}`} className="underline">
                   {l.discipline.toUpperCase()} · {formatNZDate(l.date)} · {formatTime(l.start_time)} · {l.lesson_type}
-                </Link>
+                </a>
               </li>
             ))}
           </ul>
@@ -95,7 +95,7 @@ export default async function AdminOverviewPage() {
                 ) : (
                   <div className="space-y-2">
                     {discLessons.map((lesson) => (
-                      <Link
+                      <a
                         key={lesson.id}
                         href={`/admin/lessons/${lesson.id}`}
                         className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 hover:border-alpine-600 transition-colors"
@@ -123,7 +123,7 @@ export default async function AdminOverviewPage() {
                             {lesson.on_hold ? 'on hold' : lesson.status.replace('_', ' ')}
                           </span>
                         </div>
-                      </Link>
+                      </a>
                     ))}
                   </div>
                 )}

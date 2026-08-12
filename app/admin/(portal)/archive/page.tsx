@@ -225,12 +225,12 @@ export default async function ArchivePage({
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <Link
+                            <a
                               href={`/admin/lessons/${l.id}`}
                               className="text-xs text-alpine-700 hover:underline"
                             >
                               Details
-                            </Link>
+                            </a>
                           </td>
                         </tr>
                       )

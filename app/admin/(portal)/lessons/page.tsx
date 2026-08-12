@@ -251,9 +251,9 @@ export default function AdminLessonsPage() {
               {lessons.map((lesson) => (
                 <tr key={lesson.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <Link href={`/admin/lessons/${lesson.id}`} className="text-alpine-800 font-medium hover:underline">
+                    <a href={`/admin/lessons/${lesson.id}`} className="text-alpine-800 font-medium hover:underline">
                       {formatNZDate(lesson.date)}
-                    </Link>
+                    </a>
                   </td>
                   <td className="px-4 py-3 capitalize">{lesson.discipline}</td>
                   <td className="px-4 py-3">{formatTime(lesson.start_time)}</td>
