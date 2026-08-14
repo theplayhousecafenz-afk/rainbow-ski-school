@@ -37,10 +37,27 @@ export async function POST(request: NextRequest) {
       .select('id, lesson_id')
 
     if (claimed && claimed.length === 1) {
+      const lessonId = claimed[0].lesson_id
+
       await supabase.rpc('increment_bookings', {
-        lesson: claimed[0].lesson_id,
+        lesson: lessonId,
         delta: qty,
       })
+
+      // Promote the lesson out of 'pending' once it has enough students. The
+      // confirm route does this too, but only when it was the one that claimed
+      // the booking — so when this webhook wins the race, nothing else will.
+      // A lesson left on 'pending' gets cancelled and refunded by the cutoff
+      // cron even when it is full.
+      const { data: lesson } = await supabase
+        .from('lessons')
+        .select('status, current_bookings, min_students')
+        .eq('id', lessonId)
+        .single()
+
+      if (lesson && lesson.status === 'pending' && lesson.current_bookings >= (lesson.min_students ?? 2)) {
+        await supabase.from('lessons').update({ status: 'confirmed' }).eq('id', lessonId)
+      }
     }
   }
 

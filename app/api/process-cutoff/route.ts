@@ -53,34 +53,25 @@ export async function GET(request: NextRequest) {
       .eq('lesson_id', lesson.id)
       .eq('status', 'confirmed')
 
-    const count = bookings?.length ?? 0
+    const confirmed = (bookings ?? []) as Array<Booking & { customer: Customer }>
+
+    // Count STUDENTS, not booking rows. One booking can carry a whole family —
+    // counting rows read a full lesson of 7 as "one booking" and refunded it.
+    const students = confirmed.reduce((sum, b) => sum + (b.quantity ?? 1), 0)
+
+    // Respect the lesson's own minimum. Private lessons need 1, so counting them
+    // as short-staffed would cancel every private lesson at its cutoff.
+    const minStudents = lesson.min_students ?? 2
 
     const instructor = lesson.instructor as Instructor | null
 
-    if (count === 0) {
+    if (students === 0) {
       await supabase.from('lessons').update({ status: 'cancelled' }).eq('id', lesson.id)
       await sendAdminLessonCancelledNoBookings(lesson as Lesson)
       if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
-      processed[lesson.id] = 'cancelled (0 bookings)'
-    } else if (count === 1) {
-      const booking = bookings![0] as Booking & { customer: Customer }
-
-      // Stripe refund
-      try {
-        const refund = await stripe.refunds.create({
-          payment_intent: booking.stripe_payment_intent_id,
-        })
-        await supabase
-          .from('bookings')
-          .update({ status: 'refunded', stripe_refund_id: refund.id })
-          .eq('id', booking.id)
-      } catch (err) {
-        console.error(`[cutoff] Stripe refund failed for booking ${booking.id}`, err)
-      }
-
-      await supabase.from('lessons').update({ status: 'cancelled' }).eq('id', lesson.id)
-
-      // Find available private lessons for the student
+      processed[lesson.id] = 'cancelled (no students)'
+    } else if (students < minStudents) {
+      // Below minimum — refund everyone booked in, then cancel
       const { data: privateOptions } = await supabase
         .from('lessons')
         .select('*')
@@ -89,17 +80,37 @@ export async function GET(request: NextRequest) {
         .eq('lesson_type', 'private')
         .not('status', 'in', '("cancelled","closed")')
 
-      await sendLessonCancelledInsufficientBookings(
-        booking.customer,
-        lesson as Lesson,
-        booking as Booking,
-        (privateOptions ?? []) as Lesson[]
-      )
-      await sendAdminLessonCancelledOneBooking(lesson as Lesson, booking.customer)
+      for (const booking of confirmed) {
+        try {
+          const refund = await stripe.refunds.create({
+            payment_intent: booking.stripe_payment_intent_id,
+          })
+          await supabase
+            .from('bookings')
+            .update({ status: 'refunded', stripe_refund_id: refund.id })
+            .eq('id', booking.id)
+        } catch (err) {
+          console.error(`[cutoff] Stripe refund failed for booking ${booking.id}`, err)
+        }
+
+        await sendLessonCancelledInsufficientBookings(
+          booking.customer,
+          lesson as Lesson,
+          booking as Booking,
+          (privateOptions ?? []) as Lesson[]
+        )
+        await sendAdminLessonCancelledOneBooking(lesson as Lesson, booking.customer)
+      }
+
+      await supabase
+        .from('lessons')
+        .update({ status: 'cancelled', current_bookings: 0 })
+        .eq('id', lesson.id)
+
       if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
-      processed[lesson.id] = 'cancelled (1 booking, refunded)'
+      processed[lesson.id] = `cancelled (${students} student${students !== 1 ? 's' : ''}, below minimum of ${minStudents}, refunded)`
     } else {
-      // 2+ bookings — confirm lesson, notify instructors
+      // Enough students — confirm lesson, notify instructors
       await supabase.from('lessons').update({ status: 'confirmed' }).eq('id', lesson.id)
 
       // Find active instructors matching this lesson's discipline
@@ -132,7 +143,7 @@ export async function GET(request: NextRequest) {
           )
         }
       }
-      processed[lesson.id] = `confirmed (${count} bookings, ${instructors?.length ?? 0} instructors notified)`
+      processed[lesson.id] = `confirmed (${students} students across ${confirmed.length} booking${confirmed.length !== 1 ? 's' : ''}, ${instructors?.length ?? 0} instructors notified)`
     }
   }
 
