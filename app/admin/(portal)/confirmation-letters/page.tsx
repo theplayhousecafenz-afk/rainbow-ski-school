@@ -30,8 +30,15 @@ function buildLetter({
   const formattedDate = formatNZDate(date)
   const formattedTime = formatTime(startTime)
   const disc = discipline === 'ski' ? 'Skiing' : 'Snowboarding'
-  const lvl = level.charAt(0).toUpperCase() + level.slice(1)
   const type = lessonType === 'private' ? 'Private' : 'Group'
+  // A private lesson carries the level "private" too, which read as
+  // "Private Private Skiing". Drop the level when it just repeats the type.
+  const lvl =
+    level === 'first_timer'
+      ? 'First Timer'
+      : level.charAt(0).toUpperCase() + level.slice(1)
+  const lessonLine =
+    level === 'private' ? `${type} ${disc}` : `${lvl} ${type} ${disc}`
   const instrLine = instructorName
     ? `👨‍🏫 Instructor: ${instructorName}${instructorPhone ? ` (${instructorPhone})` : ''}`
     : `👨‍🏫 Instructor: To be confirmed`
@@ -44,9 +51,29 @@ Here are your lesson details:
 
 📅 Date: ${formattedDate}
 ⏰ Time: ${formattedTime} (please arrive 10–15 minutes early)
-🎿 Lesson: ${lvl} ${type} ${disc}
+🎿 Lesson: ${lessonLine}
 ${instrLine}
 📍 Meeting Point: ${MEETING_POINT}
+
+🚗 GETTING HERE
+
+Please allow plenty of travel time — the mountain road takes longer than people expect:
+
+• From Nelson — approximately 2 hours
+• From Blenheim — approximately 2 hours
+• From St Arnaud (Lake Rotoiti village) — approximately 1 hour
+
+🧤 WHAT TO BRING
+
+• Warm clothing — layers work best. It gets cold up here, even on a clear day.
+• YOUR OWN GLOVES. We cannot rent gloves on the mountain, so please bring a pair.
+• Sunglasses or goggles, sunscreen, and a warm hat.
+
+🎿 RENTAL GEAR
+
+If you need to hire gear, please arrive nice and early and go straight to rental. The queue takes time and we can't hold up the lesson waiting for gear — being fitted and ready before your start time makes all the difference.
+
+Clothing rental is available on the mountain (jackets and pants), but gloves are not — those you'll need to bring yourself.
 
 If you have any questions before your lesson or need to make any changes, please don't hesitate to get in touch:
 
