@@ -2,6 +2,23 @@ import { Resend } from 'resend'
 import type { Customer, Lesson, Booking, Instructor, Enquiry } from '@/types'
 import { formatNZDate, formatTime, customerTypeLabel, studentMix } from './booking-utils'
 
+// ── What this system actually emails ────────────────────────────────────────
+// A customer receives exactly one automatic email: Stripe's own payment
+// receipt, sent by Stripe the moment the card is charged. Every message the app
+// used to send on its own — booking confirmations, reminders, cancellation
+// notices, instructor assignments and availability requests — is switched off.
+// Nic sends confirmation letters and lesson changes himself, so automatic mail
+// only risked arriving late, contradicting him, or reaching nobody.
+//
+// Two things still send, both deliberately:
+//   * the day sheet and roster, which only go when Nic clicks send
+//   * the website enquiry alert, since there is no admin page for enquiries and
+//     the email is the only way one reaches him
+//
+// Flip this to false to bring the automatic emails back; every template is
+// still here and still maintained.
+const AUTOMATIC_EMAILS_DISABLED = true
+
 const getResend = () => new Resend(process.env.RESEND_API_KEY ?? 're_placeholder')
 const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'snowsports@skirainbow.co.nz'
@@ -71,6 +88,7 @@ export async function sendBookingPending(
   booking: Booking,
   quantity = 1
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Booking received — pending confirmation`
   const studentLine = quantity > 1
@@ -96,6 +114,7 @@ export async function sendBookingConfirmed(
   booking: Booking,
   quantity = 1
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Booking confirmed — see you on the mountain!`
   const studentLine = quantity > 1
@@ -118,6 +137,7 @@ export async function sendLessonConfirmedToStudents(
   customers: Customer[],
   lesson: Lesson
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Great news — your lesson is confirmed!`
   for (const customer of customers) {
@@ -138,6 +158,7 @@ export async function sendLessonCancelledInsufficientBookings(
   booking: Booking,
   privateOptions: Lesson[]
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson cancelled — refund issued`
   const privateSection =
@@ -165,6 +186,7 @@ export async function sendMountainClosureRefund(
   lesson: Lesson,
   booking: Booking
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson cancelled — mountain closure, refund issued`
   const html = baseTemplate(
@@ -182,6 +204,7 @@ export async function sendInstructorAssigned(
   instructor: Instructor,
   lesson: Lesson
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] You've been assigned a lesson — ${formatNZDate(lesson.date)}`
   const html = baseTemplate(
@@ -199,6 +222,7 @@ export async function sendInstructorLessonCancelled(
   instructor: Instructor,
   lesson: Lesson
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson cancelled — ${formatNZDate(lesson.date)}`
   const html = baseTemplate(
@@ -219,6 +243,7 @@ export async function sendInstructorAvailabilityRequest(
   confirmUrl: string,
   declineUrl: string
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Availability request — ${formatNZDate(lesson.date)}`
   const html = baseTemplate(
@@ -239,6 +264,7 @@ export async function sendInstructorConfirmedAck(
   instructor: Instructor,
   lesson: Lesson
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Confirmed — you're rostered for ${formatNZDate(lesson.date)}`
   const html = baseTemplate(
@@ -257,6 +283,7 @@ export async function sendInstructorReminder(
   lesson: Lesson,
   students: Array<{ customer: Customer; quantity: number; customerType?: string }>
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
   const subject = `[${disc}] Tomorrow's lesson reminder — ${totalStudents} student${totalStudents !== 1 ? 's' : ''}`
@@ -281,6 +308,7 @@ export async function sendStudentReminder(
   lesson: Lesson,
   instructor: Instructor | null
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Tomorrow's lesson reminder`
   const instructorSection = instructor
@@ -306,6 +334,7 @@ export async function sendNewStudentAddedNotifyInstructor(
   lesson: Lesson,
   students: Array<{ customer: Customer; quantity: number; customerType?: string }>
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
   const subject = `[${disc}] New student added — now ${totalStudents}/${lesson.max_students}`
@@ -341,6 +370,7 @@ export async function sendEnquiryToAdmin(enquiry: Enquiry): Promise<void> {
 
 // Admin alert — confirmed lesson tomorrow has no instructor assigned
 export async function sendAdminNoInstructorAlert(lessons: Lesson[]): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const rows = lessons
     .map((l) => {
       const disc = l.discipline.toUpperCase()
@@ -358,6 +388,7 @@ export async function sendAdminNoInstructorAlert(lessons: Lesson[]): Promise<voi
 
 // Admin notification — lesson cancelled (0 bookings at cutoff)
 export async function sendAdminLessonCancelledNoBookings(lesson: Lesson): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson auto-cancelled — 0 bookings`
   const html = baseTemplate(
@@ -374,6 +405,7 @@ export async function sendInstructorLessonConfirmed(
   lesson: Lesson,
   students: Array<{ customer: Customer; quantity: number; customerType?: string }>
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
   const subject = `[${disc}] Your lesson is confirmed — ${totalStudents} student${totalStudents !== 1 ? 's' : ''} booked`
@@ -563,6 +595,7 @@ export async function sendLessonCancelledByAdmin(
   lesson: Lesson,
   booking: Booking
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson cancelled — full refund issued`
   const html = baseTemplate(
@@ -582,6 +615,7 @@ export async function sendAdminLessonCancelledOneBooking(
   lesson: Lesson,
   customer: Customer
 ): Promise<void> {
+  if (AUTOMATIC_EMAILS_DISABLED) return
   const disc = lesson.discipline.toUpperCase()
   const subject = `[${disc}] Lesson auto-cancelled — 1 booking, refund issued`
   const html = baseTemplate(
