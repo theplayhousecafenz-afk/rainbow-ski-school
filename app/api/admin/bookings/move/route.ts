@@ -5,12 +5,16 @@ import { createServerSupabase } from '@/lib/supabase'
 // Move a booking to a different lesson — a student who cannot make their day
 // and wants to reschedule rather than be refunded.
 //
-// The money does not move: the booking keeps its payment intent and amount, it
-// just points at a different lesson. So the target has to cost the same, which
-// means the same lesson type (group and private are priced differently). Any
-// other combination needs a refund and a fresh booking.
+// Pass `quantity` to move only part of a booking: a family of four where two
+// switch days. That splits the booking in two, both halves keeping the original
+// payment intent with the amount divided between them. Refunds are per-booking
+// amounts everywhere, so one half being cancelled never refunds the other.
+//
+// The money never moves in or out, so the destination has to cost the same —
+// same lesson type, since group and private are priced differently. Anything
+// else needs a refund and a fresh booking.
 export async function POST(request: NextRequest) {
-  const { bookingId, targetLessonId } = await request.json()
+  const { bookingId, targetLessonId, quantity: rawQty } = await request.json()
   if (!bookingId || !targetLessonId) {
     return NextResponse.json({ error: 'bookingId and targetLessonId are required' }, { status: 400 })
   }
@@ -48,7 +52,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `That lesson is ${to.status}.` }, { status: 400 })
   }
 
-  const qty = booking.quantity ?? 1
+  const bookingQty = booking.quantity ?? 1
+  const qty = rawQty === undefined || rawQty === null ? bookingQty : Number(rawQty)
+
+  if (!Number.isInteger(qty) || qty < 1 || qty > bookingQty) {
+    return NextResponse.json(
+      { error: `Number of students to move must be between 1 and ${bookingQty}.` },
+      { status: 400 }
+    )
+  }
+  const isSplit = qty < bookingQty
 
   if (to.lesson_type !== from.lesson_type) {
     return NextResponse.json(
@@ -68,15 +81,43 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Point the booking at the new lesson. discipline lives on the booking too,
-  // so it has to follow, otherwise reports would count it under the old one.
-  const { error: mErr } = await supabase
-    .from('bookings')
-    .update({ lesson_id: targetLessonId, discipline: to.discipline })
-    .eq('id', bookingId)
-    .eq('status', 'confirmed')
+  if (isSplit) {
+    // Divide the money by head so the two halves still add up to what was paid.
+    // Rounding goes to the students staying put, never creating or losing a cent.
+    const movingAmount = Math.round((booking.amount_paid * qty) / bookingQty)
+    const stayingAmount = booking.amount_paid - movingAmount
 
-  if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
+    const { error: insErr } = await supabase.from('bookings').insert({
+      lesson_id: targetLessonId,
+      customer_id: booking.customer_id,
+      discipline: to.discipline,
+      customer_type: booking.customer_type,
+      quantity: qty,
+      amount_paid: movingAmount,
+      // Deliberately the same payment intent — this is a share of one payment,
+      // not a new one. Refunds are per-booking amounts, so this stays correct.
+      stripe_payment_intent_id: booking.stripe_payment_intent_id,
+      status: 'confirmed',
+    })
+    if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 })
+
+    const { error: updErr } = await supabase
+      .from('bookings')
+      .update({ quantity: bookingQty - qty, amount_paid: stayingAmount })
+      .eq('id', bookingId)
+      .eq('status', 'confirmed')
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
+  } else {
+    // Whole booking moves — just repoint it. discipline lives on the booking
+    // too, so it has to follow or reports count it under the old lesson.
+    const { error: mErr } = await supabase
+      .from('bookings')
+      .update({ lesson_id: targetLessonId, discipline: to.discipline })
+      .eq('id', bookingId)
+      .eq('status', 'confirmed')
+
+    if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
+  }
 
   await supabase.rpc('increment_bookings', { lesson: from.id, delta: -qty })
   await supabase.rpc('increment_bookings', { lesson: to.id, delta: qty })
@@ -98,9 +139,11 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
+    split: isSplit,
     moved: {
       customer: (booking.customer as { name: string } | null)?.name ?? 'Booking',
       quantity: qty,
+      remaining: isSplit ? bookingQty - qty : 0,
       from: `${from.date} ${from.start_time.slice(0, 5)} ${from.discipline}`,
       to: `${to.date} ${to.start_time.slice(0, 5)} ${to.discipline}`,
     },

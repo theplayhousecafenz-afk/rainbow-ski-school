@@ -36,8 +36,13 @@ export async function POST(request: NextRequest) {
 
     for (const booking of bookings ?? []) {
       try {
+        // Refund only this booking's share. A booking can be a split of a larger
+        // payment (a group where some students moved to another day), so several
+        // bookings may share one payment intent — refunding the whole intent would
+        // pay back students whose lesson is still running.
         const refund = await stripe.refunds.create({
           payment_intent: booking.stripe_payment_intent_id,
+          amount: booking.amount_paid,
         })
 
         await supabase

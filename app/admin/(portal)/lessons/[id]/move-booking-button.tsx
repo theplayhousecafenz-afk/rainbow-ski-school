@@ -22,6 +22,7 @@ export default function MoveBookingButton({
   const [open, setOpen] = useState(false)
   const [lessons, setLessons] = useState<Lesson[] | null>(null)
   const [selected, setSelected] = useState('')
+  const [moveQty, setMoveQty] = useState(quantity)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -35,16 +36,18 @@ export default function MoveBookingButton({
     setLessons(all as Lesson[])
   }
 
-  // Only somewhere this booking can actually go: same price tier, still open,
-  // and with room for the whole booking.
+  // Only somewhere these students can actually go: same price tier, still open,
+  // and with room for however many are being moved.
   const options = (lessons ?? []).filter(
     (l) =>
       l.id !== currentLessonId &&
       l.lesson_type === lessonType &&
       !['cancelled', 'closed'].includes(l.status) &&
       !l.closed_to_bookings &&
-      l.current_bookings + quantity <= l.max_students
+      l.current_bookings + moveQty <= l.max_students
   )
+
+  const isSplit = moveQty < quantity
 
   async function move() {
     if (!selected) return
@@ -53,7 +56,7 @@ export default function MoveBookingButton({
     const res = await fetch('/api/admin/bookings/move', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId, targetLessonId: selected }),
+      body: JSON.stringify({ bookingId, targetLessonId: selected, quantity: moveQty }),
     })
     setBusy(false)
     if (!res.ok) {
@@ -79,14 +82,40 @@ export default function MoveBookingButton({
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 min-w-[22rem]">
       <p className="text-xs text-slate-600 mb-2">
-        Move <strong>{customerName}</strong> ({quantity} student{quantity !== 1 ? 's' : ''}) to:
+        Move <strong>{customerName}</strong>&rsquo;s booking
+        {quantity === 1 ? '' : ` (${quantity} students)`}:
       </p>
+
+      {quantity > 1 && (
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-xs text-slate-600">How many students?</label>
+          <select
+            value={moveQty}
+            onChange={(e) => { setMoveQty(parseInt(e.target.value, 10)); setSelected(''); setError('') }}
+            className="border border-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-alpine-600"
+          >
+            {Array.from({ length: quantity }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n}{n === quantity ? ' (all)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {isSplit && (
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2 leading-snug">
+          Splits the booking: {moveQty} student{moveQty !== 1 ? 's' : ''} move,{' '}
+          {quantity - moveQty} stay{quantity - moveQty === 1 ? 's' : ''} on this lesson. The
+          payment is divided between them.
+        </p>
+      )}
 
       {lessons === null ? (
         <p className="text-xs text-slate-400 py-2">Loading lessons…</p>
       ) : options.length === 0 ? (
         <p className="text-xs text-amber-700 py-2">
-          No other {lessonType} lesson has room for {quantity} student{quantity !== 1 ? 's' : ''}.
+          No other {lessonType} lesson has room for {moveQty} student{moveQty !== 1 ? 's' : ''}.
         </p>
       ) : (
         <select
@@ -113,10 +142,10 @@ export default function MoveBookingButton({
           disabled={busy || !selected}
           className="text-xs font-semibold px-3 py-1.5 rounded bg-alpine-900 text-white hover:bg-alpine-700 disabled:opacity-40"
         >
-          {busy ? 'Moving…' : 'Move Booking'}
+          {busy ? 'Moving…' : isSplit ? `Split & Move ${moveQty}` : 'Move Booking'}
         </button>
         <button
-          onClick={() => { setOpen(false); setSelected(''); setError('') }}
+          onClick={() => { setOpen(false); setSelected(''); setMoveQty(quantity); setError('') }}
           disabled={busy}
           className="text-xs px-3 py-1.5 rounded text-slate-500 hover:text-slate-700"
         >
