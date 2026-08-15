@@ -9,6 +9,7 @@ import HoldButton from './hold-button'
 import MarkFullButton from './mark-full-button'
 import CapacityEditor from './capacity-editor'
 import CancelBookingButton from './cancel-booking-button'
+import MoveBookingButton from './move-booking-button'
 import CancelLessonButton from './cancel-lesson-button'
 
 export const dynamic = 'force-dynamic'
@@ -159,7 +160,18 @@ export default async function AdminLessonDetailPage({ params }: { params: { id: 
                   </td>
                   <td className="px-5 py-3">
                     {b.status !== 'cancelled' && (
-                      <CancelBookingButton bookingId={b.id} status={b.status} />
+                      <div className="flex items-start gap-2">
+                        {b.status === 'confirmed' && (
+                          <MoveBookingButton
+                            bookingId={b.id}
+                            customerName={b.customer.name}
+                            quantity={b.quantity ?? 1}
+                            currentLessonId={l.id}
+                            lessonType={l.lesson_type}
+                          />
+                        )}
+                        <CancelBookingButton bookingId={b.id} status={b.status} />
+                      </div>
                     )}
                   </td>
                 </tr>
