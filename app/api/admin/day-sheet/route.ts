@@ -26,17 +26,18 @@ export async function POST(request: NextRequest) {
   const lessonIds = lessons.map((l) => l.id)
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('lesson_id, quantity, customer:customers(*)')
+    .select('lesson_id, quantity, customer_type, customer:customers(*)')
     .in('lesson_id', lessonIds)
     .eq('status', 'confirmed')
 
   // Group students by lesson
-  const studentsByLesson: Record<string, Array<{ customer: Customer; quantity: number }>> = {}
+  const studentsByLesson: Record<string, Array<{ customer: Customer; quantity: number; customerType: string }>> = {}
   for (const b of bookings ?? []) {
     if (!studentsByLesson[b.lesson_id]) studentsByLesson[b.lesson_id] = []
     studentsByLesson[b.lesson_id].push({
       customer: b.customer as unknown as Customer,
       quantity: (b.quantity as number) ?? 1,
+      customerType: b.customer_type as string,
     })
   }
 

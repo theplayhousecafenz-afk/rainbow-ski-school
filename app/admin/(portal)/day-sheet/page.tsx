@@ -1,5 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase'
-import { formatNZDate, formatTime } from '@/lib/booking-utils'
+import { formatNZDate, formatTime, customerTypeLabel, studentMix } from '@/lib/booking-utils'
 import type { Lesson, Customer, Instructor } from '@/types'
 import DaySheetActions from './day-sheet-actions'
 import Link from 'next/link'
@@ -25,23 +25,24 @@ export default async function DaySheetPage({
     .order('start_time')
 
   // Re-fetch bookings with actual lesson IDs if we have lessons
-  let confirmedBookings: Array<{ lesson_id: string; quantity: number; customer: Customer }> = []
+  let confirmedBookings: Array<{ lesson_id: string; quantity: number; customer_type: string; customer: Customer }> = []
   if (lessons && lessons.length > 0) {
     const { data: bkgs } = await supabase
       .from('bookings')
-      .select('lesson_id, quantity, customer:customers(*)')
+      .select('lesson_id, quantity, customer_type, customer:customers(*)')
       .in('lesson_id', lessons.map((l) => l.id))
       .eq('status', 'confirmed')
-    confirmedBookings = (bkgs ?? []) as unknown as Array<{ lesson_id: string; quantity: number; customer: Customer }>
+    confirmedBookings = (bkgs ?? []) as unknown as Array<{ lesson_id: string; quantity: number; customer_type: string; customer: Customer }>
   }
 
   // Group students by lesson
-  const studentsByLesson: Record<string, Array<{ customer: Customer; quantity: number }>> = {}
+  const studentsByLesson: Record<string, Array<{ customer: Customer; quantity: number; customerType: string }>> = {}
   for (const b of confirmedBookings) {
     if (!studentsByLesson[b.lesson_id]) studentsByLesson[b.lesson_id] = []
     studentsByLesson[b.lesson_id].push({
       customer: b.customer as unknown as Customer,
       quantity: (b.quantity as number) ?? 1,
+      customerType: b.customer_type,
     })
   }
 
@@ -125,7 +126,12 @@ export default async function DaySheetPage({
               </div>
               <div>
                 <p className="text-blue-300 text-xs font-medium uppercase tracking-wide">Total Students</p>
-                <p className="font-semibold mt-0.5">{totalStudents}</p>
+                <p className="font-semibold mt-0.5">
+                  {totalStudents}
+                  <span className="text-blue-300 font-normal text-xs ml-2">
+                    ({studentMix(Object.values(studentsByLesson).flat())})
+                  </span>
+                </p>
               </div>
               <div>
                 <p className="text-blue-300 text-xs font-medium uppercase tracking-wide">Instructors</p>
@@ -148,6 +154,9 @@ export default async function DaySheetPage({
                           {lesson.discipline} · {lesson.lesson_type}{lesson.level !== 'private' ? ` · ${lesson.level === 'first_timer' ? 'first timer' : lesson.level}` : ''}
                         </p>
                         <p className="text-lg font-bold text-slate-800">{formatTime(lesson.start_time)}</p>
+                        {students.length > 0 && (
+                          <p className="text-xs text-slate-500 mt-0.5">{totalQty} students · {studentMix(students)}</p>
+                        )}
                       </div>
                       <div className="text-right text-sm">
                         {instructor ? (
@@ -171,6 +180,7 @@ export default async function DaySheetPage({
                             <th className="px-5 py-2 font-semibold">Name</th>
                             <th className="px-5 py-2 font-semibold">Phone</th>
                             <th className="px-5 py-2 font-semibold">Email</th>
+                            <th className="px-5 py-2 font-semibold text-center">Age Group</th>
                             <th className="px-5 py-2 font-semibold text-center">Students</th>
                           </tr>
                         </thead>
@@ -180,11 +190,21 @@ export default async function DaySheetPage({
                               <td className="px-5 py-2.5 font-medium text-slate-800">{s.customer.name}</td>
                               <td className="px-5 py-2.5 text-slate-600">{s.customer.phone}</td>
                               <td className="px-5 py-2.5 text-slate-500 text-xs">{s.customer.email}</td>
+                              <td className="px-5 py-2.5 text-center">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  s.customerType === 'adult'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {customerTypeLabel(s.customerType)}
+                                </span>
+                              </td>
                               <td className="px-5 py-2.5 text-center text-slate-600">{s.quantity}</td>
                             </tr>
                           ))}
                           <tr className="border-t border-slate-200 bg-slate-50">
                             <td colSpan={3} className="px-5 py-2 text-xs font-semibold text-slate-500 text-right">Total:</td>
+                            <td className="px-5 py-2 text-center text-xs font-semibold text-slate-600">{studentMix(students)}</td>
                             <td className="px-5 py-2 text-center font-bold text-slate-700">{totalQty}</td>
                           </tr>
                         </tbody>

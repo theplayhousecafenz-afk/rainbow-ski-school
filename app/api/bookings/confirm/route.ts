@@ -91,12 +91,13 @@ export async function POST(request: NextRequest) {
     if (lesson.instructor_id && lesson.instructor) {
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('quantity, customer:customers(*)')
+        .select('quantity, customer_type, customer:customers(*)')
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
       const studentEntries = (allBookings ?? []).map((b) => ({
         customer: b.customer as unknown as Customer,
         quantity: (b.quantity as number) ?? 1,
+        customerType: b.customer_type as string,
       }))
       await sendInstructorLessonConfirmed(lesson.instructor as Instructor, lesson, studentEntries)
     }
@@ -108,12 +109,13 @@ export async function POST(request: NextRequest) {
     if (lesson.instructor_id && lesson.instructor) {
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('quantity, customer:customers(*)')
+        .select('quantity, customer_type, customer:customers(*)')
         .eq('lesson_id', booking.lesson_id)
         .eq('status', 'confirmed')
       const studentEntries = (allBookings ?? []).map((b) => ({
         customer: b.customer as unknown as Customer,
         quantity: (b.quantity as number) ?? 1,
+        customerType: b.customer_type as string,
       }))
       await sendNewStudentAddedNotifyInstructor(lesson.instructor as Instructor, lesson, studentEntries)
     }

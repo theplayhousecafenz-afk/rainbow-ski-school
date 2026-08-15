@@ -46,13 +46,14 @@ export async function GET(request: NextRequest) {
 
     const { data: bookings } = await supabase
       .from('bookings')
-      .select('quantity, customer:customers(*)')
+      .select('quantity, customer_type, customer:customers(*)')
       .eq('lesson_id', lesson.id)
       .eq('status', 'confirmed')
 
     const studentEntries = (bookings ?? []).map((b) => ({
       customer: b.customer as unknown as Customer,
       quantity: (b.quantity as number) ?? 1,
+      customerType: b.customer_type as string,
     }))
 
     if (studentEntries.length === 0) continue

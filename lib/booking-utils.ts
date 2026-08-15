@@ -9,6 +9,29 @@ export function defaultMaxStudents(lessonType: 'group' | 'private'): number {
   return lessonType === 'group' ? GROUP_MAX_STUDENTS : 1
 }
 
+// Booking price tiers are the only age signal we hold — there is no date of
+// birth anywhere. "Youth" is the concession tier, covering youth, child,
+// student and senior, so treat it as a rough age hint rather than a fact.
+export function customerTypeLabel(type: string | null | undefined): string {
+  return type === 'adult' ? 'Adult' : 'Youth'
+}
+
+// "4 adult, 2 youth" — the headline instructors actually want off a day sheet.
+export function studentMix(
+  students: Array<{ quantity: number; customerType?: string | null }>
+): string {
+  let adults = 0
+  let youth = 0
+  for (const s of students) {
+    if (s.customerType === 'adult') adults += s.quantity
+    else youth += s.quantity
+  }
+  const parts: string[] = []
+  if (adults > 0) parts.push(`${adults} adult`)
+  if (youth > 0) parts.push(`${youth} youth`)
+  return parts.join(', ') || 'no students'
+}
+
 // NZST = UTC+12 (ski season is NZ winter = May–Sep, no daylight saving)
 // lesson.date stored as "YYYY-MM-DD" parsed as UTC midnight by JS
 // Saturday (day 6 NZ) → cutoff Thursday 23:59:59 NZST = Thursday 11:59:59 UTC

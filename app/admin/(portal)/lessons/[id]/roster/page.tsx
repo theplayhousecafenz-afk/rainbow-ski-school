@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createServerSupabase } from '@/lib/supabase'
-import { formatNZDate, formatTime } from '@/lib/booking-utils'
+import { formatNZDate, formatTime, customerTypeLabel, studentMix } from '@/lib/booking-utils'
 import type { Lesson, Booking, Customer, Instructor } from '@/types'
 import RosterActions from './roster-actions'
 
@@ -17,7 +17,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
       .single(),
     supabase
       .from('bookings')
-      .select('quantity, customer:customers(*)')
+      .select('quantity, customer_type, customer:customers(*)')
       .eq('lesson_id', params.id)
       .eq('status', 'confirmed')
       .order('created_at'),
@@ -29,6 +29,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
   const students = (bookings ?? []).map((b) => ({
     customer: b.customer as unknown as Customer,
     quantity: (b.quantity as number) ?? 1,
+    customerType: b.customer_type as string,
   }))
   const totalStudents = students.reduce((sum, s) => sum + s.quantity, 0)
   const instructor = l.instructor as Instructor | null
@@ -86,7 +87,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
             <Detail label="Time" value={formatTime(l.start_time)} />
             <Detail label="Type" value={l.lesson_type.charAt(0).toUpperCase() + l.lesson_type.slice(1)} />
             <Detail label="Level" value={l.level === 'first_timer' ? 'First Timer' : l.level.charAt(0).toUpperCase() + l.level.slice(1)} />
-            <Detail label="Students" value={`${totalStudents} confirmed`} />
+            <Detail label="Students" value={`${totalStudents} confirmed — ${studentMix(students)}`} />
           </div>
 
           {instructor && (
@@ -111,6 +112,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
                   <th className="text-left py-2 pr-4 text-xs font-bold uppercase tracking-wide text-slate-500">Name</th>
                   <th className="text-left py-2 pr-4 text-xs font-bold uppercase tracking-wide text-slate-500">Phone</th>
                   <th className="text-left py-2 pr-4 text-xs font-bold uppercase tracking-wide text-slate-500">Email</th>
+                  <th className="text-center py-2 pr-4 text-xs font-bold uppercase tracking-wide text-slate-500">Age Group</th>
                   <th className="text-center py-2 text-xs font-bold uppercase tracking-wide text-slate-500">Qty</th>
                 </tr>
               </thead>
@@ -120,6 +122,13 @@ export default async function RosterPage({ params }: { params: { id: string } })
                     <td className="py-3 pr-4 font-semibold text-slate-800">{s.customer.name}</td>
                     <td className="py-3 pr-4 text-slate-600">{s.customer.phone}</td>
                     <td className="py-3 pr-4 text-slate-500 text-xs">{s.customer.email}</td>
+                    <td className="py-3 pr-4 text-center">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        s.customerType === 'adult' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {customerTypeLabel(s.customerType)}
+                      </span>
+                    </td>
                     <td className="py-3 text-center text-slate-600">{s.quantity}</td>
                   </tr>
                 ))}
@@ -127,6 +136,7 @@ export default async function RosterPage({ params }: { params: { id: string } })
               <tfoot>
                 <tr>
                   <td colSpan={3} className="pt-3 text-sm font-semibold text-slate-600 text-right pr-4">Total students:</td>
+                  <td className="pt-3 pr-4 text-center text-xs font-semibold text-slate-600">{studentMix(students)}</td>
                   <td className="pt-3 text-center font-bold text-slate-800">{totalStudents}</td>
                 </tr>
               </tfoot>

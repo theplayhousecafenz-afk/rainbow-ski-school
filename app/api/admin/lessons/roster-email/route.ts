@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('quantity, customer:customers(*)')
+    .select('quantity, customer_type, customer:customers(*)')
     .eq('lesson_id', lessonId)
     .eq('status', 'confirmed')
     .order('created_at')
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
   const students = (bookings ?? []).map((b) => ({
     customer: b.customer as unknown as Customer,
     quantity: (b.quantity as number) ?? 1,
+    customerType: b.customer_type as string,
   }))
 
   if (students.length === 0) {
