@@ -98,11 +98,12 @@ export default async function ConfirmationLettersPage({
 
   const supabase = createServerSupabase()
 
+  // Cancelled lessons stay listed. After a weather closure this page is still
+  // where the addresses come from to tell people the day is off.
   const { data: lessons } = await supabase
     .from('lessons')
     .select('*, instructor:instructors(*)')
     .eq('date', selectedDate)
-    .neq('status', 'cancelled')
     .order('start_time')
 
   const lessonIds = (lessons ?? []).map((l) => l.id)
@@ -122,7 +123,7 @@ export default async function ConfirmationLettersPage({
       .from('bookings')
       .select('lesson_id, quantity, customer:customers(name, email)')
       .in('lesson_id', lessonIds)
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'refunded'])
       .order('created_at')
 
     for (const lesson of lessons ?? []) {
