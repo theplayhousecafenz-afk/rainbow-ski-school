@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
-import { stripe } from '@/lib/stripe'
 import {
-  sendLessonCancelledInsufficientBookings,
   sendInstructorAvailabilityRequest,
   sendInstructorLessonCancelled,
   sendAdminLessonCancelledNoBookings,
-  sendAdminLessonCancelledOneBooking,
 } from '@/lib/email'
 import type { Customer, Lesson, Booking, Instructor, BookingStatus } from '@/types'
 
@@ -71,49 +68,16 @@ export async function GET(request: NextRequest) {
       if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
       processed[lesson.id] = 'cancelled (no students)'
     } else if (students < minStudents) {
-      // Below minimum — refund everyone booked in, then cancel
-      const { data: privateOptions } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('date', lesson.date)
-        .eq('discipline', lesson.discipline)
-        .eq('lesson_type', 'private')
-        .not('status', 'in', '("cancelled","closed")')
-
-      for (const booking of confirmed) {
-        try {
-          // Refund only this booking's share. A booking can be a split of a larger
-          // payment (a group where some students moved to another day), so several
-          // bookings may share one payment intent — refunding the whole intent would
-          // pay back students whose lesson is still running.
-          const refund = await stripe.refunds.create({
-            payment_intent: booking.stripe_payment_intent_id,
-            amount: booking.amount_paid,
-          })
-          await supabase
-            .from('bookings')
-            .update({ status: 'refunded', stripe_refund_id: refund.id })
-            .eq('id', booking.id)
-        } catch (err) {
-          console.error(`[cutoff] Stripe refund failed for booking ${booking.id}`, err)
-        }
-
-        await sendLessonCancelledInsufficientBookings(
-          booking.customer,
-          lesson as Lesson,
-          booking as Booking,
-          (privateOptions ?? []) as Lesson[]
-        )
-        await sendAdminLessonCancelledOneBooking(lesson as Lesson, booking.customer)
-      }
-
-      await supabase
-        .from('lessons')
-        .update({ status: 'cancelled', current_bookings: 0 })
-        .eq('id', lesson.id)
-
-      if (instructor) await sendInstructorLessonCancelled(instructor, lesson as Lesson)
-      processed[lesson.id] = `cancelled (${students} student${students !== 1 ? 's' : ''}, below minimum of ${minStudents}, refunded)`
+      // Short of the minimum, but people have paid — leave it alone and let Nic
+      // decide. This used to refund everyone and cancel automatically, which
+      // moved real money with nobody looking; a lesson one student short is
+      // often worth running, or worth a phone call before it is called off.
+      //
+      // Nothing is written here on purpose. The lesson stays 'pending', which
+      // is what the admin overview reads to flag it as needing a decision, so
+      // there is no flag to set and none to clear once he acts.
+      processed[lesson.id] =
+        `flagged for review — ${students} student${students !== 1 ? 's' : ''}, below the minimum of ${minStudents}. Left pending, nothing refunded.`
     } else {
       // Enough students — confirm lesson, notify instructors
       await supabase.from('lessons').update({ status: 'confirmed' }).eq('id', lesson.id)

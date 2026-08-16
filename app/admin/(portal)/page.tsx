@@ -45,6 +45,21 @@ export default async function AdminOverviewPage() {
     return l.lesson_type === 'group' && l.current_bookings === 1 && hoursToGo > 0 && hoursToGo < 48
   })
 
+  // Past its cutoff, someone has paid, but short of the minimum. The cutoff cron
+  // used to refund and cancel these on its own; it now leaves them alone and
+  // they surface here instead, so the call is Nic's. Derived rather than stored,
+  // so acting on one clears it automatically.
+  const needsDecision = (lessons ?? []).filter((l) => {
+    const cutoff = getBookingCutoff(new Date(l.date))
+    const min = l.min_students ?? 2
+    return (
+      l.status === 'pending' &&
+      now > cutoff &&
+      l.current_bookings > 0 &&
+      l.current_bookings < min
+    )
+  })
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -56,6 +71,34 @@ export default async function AdminOverviewPage() {
           All Lessons
         </Link>
       </div>
+
+      {/* Past cutoff and short of the minimum — your call */}
+      {needsDecision.length > 0 && (
+        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-5 mb-6">
+          <p className="font-bold text-red-900 mb-1">
+            🔔 {needsDecision.length} lesson{needsDecision.length !== 1 ? 's' : ''} need
+            {needsDecision.length === 1 ? 's' : ''} your decision
+          </p>
+          <p className="text-sm text-red-800 mb-3">
+            Past the booking cutoff and short of the minimum, but students have paid.
+            Nothing has been cancelled or refunded — run it anyway, ring them, or cancel
+            and refund from the lesson page.
+          </p>
+          <ul className="text-sm space-y-1.5">
+            {needsDecision.map((l) => (
+              <li key={l.id}>
+                <a href={`/admin/lessons/${l.id}`} className="text-red-900 font-medium underline">
+                  {l.discipline.toUpperCase()} · {formatNZDate(l.date)} · {formatTime(l.start_time)}
+                  {l.level !== 'private' ? ` · ${l.level === 'first_timer' ? 'first timer' : l.level}` : ''}
+                </a>
+                <span className="text-red-700">
+                  {' '}— {l.current_bookings} of {l.min_students ?? 2} needed
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* At-risk alert */}
       {atRisk.length > 0 && (
