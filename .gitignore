@@ -10,3 +10,6 @@ Rainbow ski school prompts and FAQs/
 tsconfig.tsbuildinfo
 .vercel
 .env*
+
+# Database backups — contain customer names, emails and phone numbers
+backups/
