@@ -37,6 +37,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <a href="/admin/reports" className="hover:text-orange-300 transition-colors">
           Reports
         </a>
+        <a href="/admin/enquiries" className="hover:text-orange-300 transition-colors">
+          Enquiries
+        </a>
         <a href="/admin/promos" className="hover:text-orange-300 transition-colors">
           Promo Codes
         </a>

@@ -84,6 +84,7 @@ export interface Enquiry {
   email: string
   message: string
   auto_reply_sent: boolean
+  handled: boolean
   created_at: string
 }
 

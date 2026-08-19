@@ -31,6 +31,16 @@ export default async function AdminOverviewPage() {
 
   if (lessonErr) console.error('[Admin overview] lessons query error:', lessonErr)
 
+  // Enquiries used to reach Nic only by email. Surface the outstanding count
+  // here so they cannot pile up unread again. Tolerates the column not existing
+  // yet so the overview keeps working before migration 010 is run.
+  let unansweredEnquiries = 0
+  const { count: enquiryCount } = await supabase
+    .from('enquiries')
+    .select('*', { count: 'exact', head: true })
+    .eq('handled', false)
+  unansweredEnquiries = enquiryCount ?? 0
+
   // Group by date then discipline
   const byDate: Record<string, { ski: Lesson[]; snowboard: Lesson[] }> = {}
   for (const lesson of lessons ?? []) {
@@ -71,6 +81,18 @@ export default async function AdminOverviewPage() {
           All Lessons
         </Link>
       </div>
+
+      {unansweredEnquiries > 0 && (
+        <a
+          href="/admin/enquiries"
+          className="block bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 mb-6 hover:border-blue-400 transition-colors"
+        >
+          <p className="text-sm font-semibold text-blue-900">
+            ✉️ {unansweredEnquiries} website enquir{unansweredEnquiries === 1 ? 'y' : 'ies'} waiting for a reply
+          </p>
+          <p className="text-xs text-blue-700 mt-0.5">Click to read and answer them.</p>
+        </a>
+      )}
 
       {/* Past cutoff and short of the minimum — your call */}
       {needsDecision.length > 0 && (
