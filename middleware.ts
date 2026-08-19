@@ -1,13 +1,34 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// Guards both the admin pages and the admin API. The API used to sit outside
+// this because the matcher only covered /admin/:path* — /api/admin/... does not
+// start with /admin, so every admin endpoint was reachable without logging in,
+// including the ones that cancel lessons and issue refunds.
+function isAuthed(request: NextRequest): boolean {
+  const cookie = request.cookies.get('admin_session')
+  const expected = btoa(process.env.ADMIN_PASSWORD ?? '')
+  return !!cookie && cookie.value === expected
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Logging in and out must stay reachable while logged out.
+  if (pathname === '/api/admin/login' || pathname === '/api/admin/logout') {
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/api/admin')) {
+    if (!isAuthed(request)) {
+      // An API caller wants an answer, not a redirect to a login page.
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return NextResponse.next()
+  }
+
   if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const cookie = request.cookies.get('admin_session')
-    const expected = btoa(process.env.ADMIN_PASSWORD ?? '')
-    if (!cookie || cookie.value !== expected) {
+    if (!isAuthed(request)) {
       const loginUrl = new URL('/admin/login', request.url)
       loginUrl.searchParams.set('from', pathname)
       return NextResponse.redirect(loginUrl)
@@ -18,5 +39,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 }
