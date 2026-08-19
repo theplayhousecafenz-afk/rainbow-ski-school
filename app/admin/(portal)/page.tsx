@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createServerSupabase } from '@/lib/supabase'
 import { formatNZDate, formatTime, getBookingCutoff } from '@/lib/booking-utils'
 import type { Lesson } from '@/types'
+import BackupButton from './backup-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,6 +82,8 @@ export default async function AdminOverviewPage() {
           All Lessons
         </Link>
       </div>
+
+      <BackupButton />
 
       {unansweredEnquiries > 0 && (
         <a
